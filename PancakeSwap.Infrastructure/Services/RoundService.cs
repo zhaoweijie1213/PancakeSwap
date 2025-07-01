@@ -122,7 +122,7 @@ namespace PancakeSwap.Infrastructure.Services
         }
 
         /// <inheritdoc />
-        public async Task<IList<HistoryRoundOutput>> GetHistoryAsync(int count, CancellationToken ct)
+        public async Task<List<HistoryRoundOutput>> GetHistoryAsync(int count, CancellationToken ct)
         {
             var rounds = await _context.Db.Queryable<RoundEntity>()
                 .Where(r => r.Status == (int)RoundStatus.Ended)
@@ -156,7 +156,7 @@ namespace PancakeSwap.Infrastructure.Services
         }
 
         /// <inheritdoc />
-        public async Task<IList<UpcomingRoundOutput>> GetUpcomingAsync(int count, CancellationToken ct)
+        public async Task<List<UpcomingRoundOutput>> GetUpcomingAsync(int count, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
             var rounds = await _context.Db.Queryable<RoundEntity>()
