@@ -1,5 +1,6 @@
 using System;
 using SqlSugar;
+using PancakeSwap.Application.Enums;
 
 namespace PancakeSwap.Application.Database.Entities
 {
@@ -12,8 +13,8 @@ namespace PancakeSwap.Application.Database.Entities
         /// <summary>
         /// 回合编号。
         /// </summary>
-        [SugarColumn(IsPrimaryKey = true, IsIdentity = false, ColumnName = "epoch")]
-        public long Epoch { get; set; }
+        [SugarColumn(IsPrimaryKey = true, IsIdentity = false, ColumnName = "id")]
+        public long Id { get; set; }
 
         /// <summary>
         /// 回合开始时间。
@@ -46,10 +47,16 @@ namespace PancakeSwap.Application.Database.Entities
         public decimal ClosePrice { get; set; }
 
         /// <summary>
+        /// 当前价格。
+        /// </summary>
+        [SugarColumn(ColumnName = "current_price", ColumnDataType = "decimal(18,8)")]
+        public decimal CurrentPrice { get; set; }
+
+        /// <summary>
         /// 回合状态。
         /// </summary>
         [SugarColumn(ColumnName = "status")]
-        public int Status { get; set; }
+        public RoundStatus Status { get; set; }
 
         /// <summary>
         /// 本回合的下注总金额。
@@ -60,19 +67,19 @@ namespace PancakeSwap.Application.Database.Entities
         /// <summary>
         /// 押涨总金额。
         /// </summary>
-        [SugarColumn(ColumnName = "bull_amount", ColumnDataType = "decimal(18,8)")]
-        public decimal BullAmount { get; set; }
+        [SugarColumn(ColumnName = "up_amount", ColumnDataType = "decimal(18,8)")]
+        public decimal UpAmount { get; set; }
 
         /// <summary>
         /// 押跌总金额。
         /// </summary>
-        [SugarColumn(ColumnName = "bear_amount", ColumnDataType = "decimal(18,8)")]
-        public decimal BearAmount { get; set; }
+        [SugarColumn(ColumnName = "down_amount", ColumnDataType = "decimal(18,8)")]
+        public decimal DownAmount { get; set; }
 
         /// <summary>
-        /// 获胜方向，0 表示看涨，1 表示看跌。
+        /// 可分配奖金池。
         /// </summary>
-        [SugarColumn(ColumnName = "winning_position", IsNullable = true)]
-        public int? WinningPosition { get; set; }
+        [SugarColumn(ColumnName = "reward_amount", ColumnDataType = "decimal(18,8)")]
+        public decimal RewardAmount { get; set; }
     }
 }

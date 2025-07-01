@@ -1,4 +1,5 @@
 using SqlSugar;
+using PancakeSwap.Application.Enums;
 
 namespace PancakeSwap.Application.Database.Entities
 {
@@ -9,22 +10,22 @@ namespace PancakeSwap.Application.Database.Entities
     public class BetEntity
     {
         /// <summary>
-        /// 主键自增编号。
+        /// 主键编号。
         /// </summary>
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true, ColumnName = "id")]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         /// <summary>
         /// 所属回合编号。
         /// </summary>
-        [SugarColumn(ColumnName = "epoch")]
-        public long Epoch { get; set; }
+        [SugarColumn(ColumnName = "epoch_id")]
+        public long EpochId { get; set; }
 
         /// <summary>
         /// 用户地址。
         /// </summary>
-        [SugarColumn(ColumnName = "address")]
-        public string Address { get; set; } = string.Empty;
+        [SugarColumn(ColumnName = "user_address")]
+        public string UserAddress { get; set; } = string.Empty;
 
         /// <summary>
         /// 下注金额。
@@ -36,6 +37,18 @@ namespace PancakeSwap.Application.Database.Entities
         /// 下注方向。
         /// </summary>
         [SugarColumn(ColumnName = "position")]
-        public int Position { get; set; }
+        public Position Position { get; set; }
+
+        /// <summary>
+        /// 是否已领取奖励。
+        /// </summary>
+        [SugarColumn(ColumnName = "claimed")]
+        public bool Claimed { get; set; }
+
+        /// <summary>
+        /// 奖励金额。
+        /// </summary>
+        [SugarColumn(ColumnName = "reward", ColumnDataType = "decimal(18,8)")]
+        public decimal Reward { get; set; }
     }
 }

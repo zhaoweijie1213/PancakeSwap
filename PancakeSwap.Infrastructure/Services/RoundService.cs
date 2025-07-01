@@ -34,23 +34,23 @@ namespace PancakeSwap.Infrastructure.Services
         public async Task<long> CreateNextRoundAsync(CancellationToken ct)
         {
             var last = await _context.Db.Queryable<RoundEntity>()
-                .OrderBy(r => r.Epoch, OrderByType.Desc)
+                .OrderBy(r => r.Id, OrderByType.Desc)
                 .FirstAsync();
-            var nextEpoch = (last?.Epoch ?? 0) + 1;
+            var nextId = (last?.Id ?? 0) + 1;
 
             var round = new RoundEntity
             {
-                Epoch = nextEpoch,
+                Id = nextId,
                 StartTime = DateTime.UtcNow,
-                Status = (int)RoundStatus.Pending
+                Status = RoundStatus.Upcoming
             };
 
             await _context.Db.Insertable(round).ExecuteCommandAsync();
-            return nextEpoch;
+            return nextId;
         }
 
         /// <inheritdoc />
-        public async Task LockRoundAsync(long epoch, CancellationToken ct)
+        public async Task LockRoundAsync(long id, CancellationToken ct)
         {
             var price = await _priceFeed.GetLatestPriceAsync(ct);
             if (price == null)
@@ -63,14 +63,14 @@ namespace PancakeSwap.Infrastructure.Services
                 {
                     LockPrice = price.Value,
                     LockTime = DateTime.UtcNow,
-                    Status = (int)RoundStatus.Locked
+                    Status = RoundStatus.Locked
                 })
-                .Where(r => r.Epoch == epoch)
+                .Where(r => r.Id == id)
                 .ExecuteCommandAsync();
         }
 
         /// <inheritdoc />
-        public async Task SettleRoundAsync(long epoch, CancellationToken ct)
+        public async Task SettleRoundAsync(long id, CancellationToken ct)
         {
             var closePrice = await _priceFeed.GetLatestPriceAsync(ct);
             if (closePrice == null)
@@ -78,23 +78,21 @@ namespace PancakeSwap.Infrastructure.Services
                 throw new InvalidOperationException("Price unavailable");
             }
             var round = await _context.Db.Queryable<RoundEntity>()
-                .Where(r => r.Epoch == epoch)
+                .Where(r => r.Id == id)
                 .FirstAsync();
             if (round == null)
             {
                 return;
             }
 
-            var winner = closePrice > round.LockPrice ? (int)BetPosition.Bull : (int)BetPosition.Bear;
             await _context.Db.Updateable<RoundEntity>()
                 .SetColumns(r => new RoundEntity
                 {
                     ClosePrice = closePrice.Value,
                     CloseTime = DateTime.UtcNow,
-                    Status = (int)RoundStatus.Ended,
-                    WinningPosition = winner
+                    Status = RoundStatus.Ended
                 })
-                .Where(r => r.Epoch == epoch)
+                .Where(r => r.Id == id)
                 .ExecuteCommandAsync();
         }
 
@@ -103,8 +101,8 @@ namespace PancakeSwap.Infrastructure.Services
         {
             var now = DateTime.UtcNow;
             var round = await _context.Db.Queryable<RoundEntity>()
-                .Where(r => r.Status != (int)RoundStatus.Ended)
-                .OrderBy(r => r.Epoch, OrderByType.Desc)
+                .Where(r => r.Status != RoundStatus.Ended)
+                .OrderBy(r => r.Id, OrderByType.Desc)
                 .FirstAsync();
 
             if (round == null)
@@ -115,10 +113,10 @@ namespace PancakeSwap.Infrastructure.Services
             var secondsRemaining = (int)Math.Max(0, (round.CloseTime - now).TotalSeconds);
             return new CurrentRoundOutput
             {
-                Epoch = round.Epoch,
+                Epoch = round.Id,
                 SecondsRemaining = secondsRemaining,
-                BullAmount = round.BullAmount,
-                BearAmount = round.BearAmount
+                BullAmount = round.UpAmount,
+                BearAmount = round.DownAmount
             };
         }
 
@@ -131,8 +129,8 @@ namespace PancakeSwap.Infrastructure.Services
         public async Task<List<HistoryRoundOutput>> GetHistoryAsync(int count, CancellationToken ct)
         {
             var rounds = await _context.Db.Queryable<RoundEntity>()
-                .Where(r => r.Status == (int)RoundStatus.Ended)
-                .OrderBy(r => r.Epoch, OrderByType.Desc)
+                .Where(r => r.Status == RoundStatus.Ended)
+                .OrderBy(r => r.Id, OrderByType.Desc)
                 .Take(count)
                 .ToListAsync();
 
@@ -140,16 +138,16 @@ namespace PancakeSwap.Infrastructure.Services
             foreach (var r in rounds)
             {
                 var total = r.TotalAmount;
-                var oddsUp = r.BullAmount > 0 ? total / r.BullAmount : 0m;
-                var oddsDown = r.BearAmount > 0 ? total / r.BearAmount : 0m;
+                var oddsUp = r.UpAmount > 0 ? total / r.UpAmount : 0m;
+                var oddsDown = r.DownAmount > 0 ? total / r.DownAmount : 0m;
                 list.Add(new HistoryRoundOutput
                 {
-                    Id = r.Epoch,
+                    Id = r.Id,
                     LockPrice = r.LockPrice,
                     ClosePrice = r.ClosePrice,
                     TotalAmount = total,
-                    UpAmount = r.BullAmount,
-                    DownAmount = r.BearAmount,
+                    UpAmount = r.UpAmount,
+                    DownAmount = r.DownAmount,
                     RewardAmount = total,
                     EndTime = new DateTimeOffset(r.CloseTime).ToUnixTimeSeconds(),
                     Status = RoundStatus.Ended.ToString().ToLowerInvariant(),
@@ -171,8 +169,8 @@ namespace PancakeSwap.Infrastructure.Services
         {
             var now = DateTime.UtcNow;
             var rounds = await _context.Db.Queryable<RoundEntity>()
-                .Where(r => r.Status == (int)RoundStatus.Pending && r.StartTime > now)
-                .OrderBy(r => r.Epoch, OrderByType.Asc)
+                .Where(r => r.Status == RoundStatus.Upcoming && r.StartTime > now)
+                .OrderBy(r => r.Id, OrderByType.Asc)
                 .Take(count)
                 .ToListAsync();
 
@@ -181,7 +179,7 @@ namespace PancakeSwap.Infrastructure.Services
             {
                 list.Add(new UpcomingRoundOutput
                 {
-                    Id = r.Epoch,
+                    Id = r.Id,
                     StartTime = new DateTimeOffset(r.StartTime).ToUnixTimeSeconds(),
                     EndTime = new DateTimeOffset(r.CloseTime).ToUnixTimeSeconds()
                 });

@@ -1,18 +1,18 @@
 namespace PancakeSwap.Application.Enums
 {
     /// <summary>
-    /// 下注方向。
+    /// 用户下注方向。
     /// </summary>
-    public enum BetPosition
+    public enum Position
     {
         /// <summary>
-        /// 看涨。
+        /// 看涨方向。
         /// </summary>
-        Bull = 0,
+        Up = 0,
 
         /// <summary>
-        /// 看跌。
+        /// 看跌方向。
         /// </summary>
-        Bear = 1
+        Down = 1
     }
 }
