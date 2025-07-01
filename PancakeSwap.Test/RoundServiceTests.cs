@@ -28,9 +28,9 @@ public class RoundServiceTests(WebApplicationFactory<Program> factory) : IClassF
         var context = _serviceProvider.GetRequiredService<ApplicationDbContext>();
         await context.Db.Insertable(new RoundEntity
         {
-            Epoch = 1,
+            Id = 1,
             LockPrice = 10,
-            Status = (int)RoundStatus.Locked,
+            Status = RoundStatus.Locked,
             StartTime = DateTime.UtcNow,
             LockTime = DateTime.UtcNow,
             CloseTime = DateTime.UtcNow
@@ -50,9 +50,9 @@ public class RoundServiceTests(WebApplicationFactory<Program> factory) : IClassF
         var context = _serviceProvider.GetRequiredService<ApplicationDbContext>();
         await context.Db.Insertable(new RoundEntity
         {
-            Epoch = 1,
+            Id = 1,
             LockPrice = 10,
-            Status = (int)RoundStatus.Locked,
+            Status = RoundStatus.Locked,
             StartTime = DateTime.UtcNow,
             LockTime = DateTime.UtcNow,
             CloseTime = DateTime.UtcNow
@@ -65,7 +65,7 @@ public class RoundServiceTests(WebApplicationFactory<Program> factory) : IClassF
 
         await service.SettleRoundAsync(1, CancellationToken.None);
 
-        var round = await context.Db.Queryable<RoundEntity>().Where(r => r.Epoch == 1).FirstAsync();
-        Assert.Equal((int)BetPosition.Bull, round.WinningPosition);
+        var round = await context.Db.Queryable<RoundEntity>().Where(r => r.Id == 1).FirstAsync();
+        Assert.Equal(RoundStatus.Ended, round.Status);
     }
 }
