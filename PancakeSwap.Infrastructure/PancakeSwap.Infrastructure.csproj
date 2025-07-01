@@ -9,5 +9,8 @@
   <ItemGroup>
     <ProjectReference Include="..\PancakeSwap.Application\PancakeSwap.Application.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Nethereum.Web3" Version="4.12.1" />
+  </ItemGroup>
 
 </Project>
