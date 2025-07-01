@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -118,6 +119,83 @@ namespace PancakeSwap.Infrastructure.Services
                 BullAmount = round.BullAmount,
                 BearAmount = round.BearAmount
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<IList<HistoryRoundOutput>> GetHistoryAsync(int count, CancellationToken ct)
+        {
+            var rounds = await _context.Db.Queryable<RoundEntity>()
+                .Where(r => r.Status == (int)RoundStatus.Ended)
+                .OrderBy(r => r.Epoch, OrderByType.Desc)
+                .Take(count)
+                .ToListAsync();
+
+            var list = new List<HistoryRoundOutput>();
+            foreach (var r in rounds)
+            {
+                var total = r.TotalAmount;
+                var oddsUp = r.BullAmount > 0 ? total / r.BullAmount : 0m;
+                var oddsDown = r.BearAmount > 0 ? total / r.BearAmount : 0m;
+                list.Add(new HistoryRoundOutput
+                {
+                    Id = r.Epoch,
+                    LockPrice = r.LockPrice,
+                    ClosePrice = r.ClosePrice,
+                    TotalAmount = total,
+                    UpAmount = r.BullAmount,
+                    DownAmount = r.BearAmount,
+                    RewardAmount = total,
+                    EndTime = new DateTimeOffset(r.CloseTime).ToUnixTimeSeconds(),
+                    Status = RoundStatus.Ended.ToString().ToLowerInvariant(),
+                    OddsUp = oddsUp,
+                    OddsDown = oddsDown
+                });
+            }
+
+            return list;
+        }
+
+        /// <inheritdoc />
+        public async Task<IList<UpcomingRoundOutput>> GetUpcomingAsync(int count, CancellationToken ct)
+        {
+            var now = DateTime.UtcNow;
+            var rounds = await _context.Db.Queryable<RoundEntity>()
+                .Where(r => r.Status == (int)RoundStatus.Pending && r.StartTime > now)
+                .OrderBy(r => r.Epoch, OrderByType.Asc)
+                .Take(count)
+                .ToListAsync();
+
+            var list = new List<UpcomingRoundOutput>();
+            foreach (var r in rounds)
+            {
+                list.Add(new UpcomingRoundOutput
+                {
+                    Id = r.Epoch,
+                    StartTime = new DateTimeOffset(r.StartTime).ToUnixTimeSeconds(),
+                    EndTime = new DateTimeOffset(r.CloseTime).ToUnixTimeSeconds()
+                });
+            }
+
+            return list;
+        }
+
+        /// <inheritdoc />
+        public async Task<ChartDataOutput> GetChartDataAsync(CancellationToken ct)
+        {
+            var since = DateTime.UtcNow.AddMinutes(-10);
+            var rounds = await _context.Db.Queryable<RoundEntity>()
+                .Where(r => r.CloseTime > since)
+                .OrderBy(r => r.CloseTime)
+                .ToListAsync();
+
+            var output = new ChartDataOutput();
+            foreach (var r in rounds)
+            {
+                output.OriginalXData.Add(r.CloseTime.ToString("HH:mm:ss"));
+                output.SeriesData.Add(r.ClosePrice);
+            }
+
+            return output;
         }
 
         private async Task<decimal> FetchLatestPriceAsync()

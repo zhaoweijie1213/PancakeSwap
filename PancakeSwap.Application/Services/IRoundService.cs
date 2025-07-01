@@ -35,5 +35,25 @@ namespace PancakeSwap.Application.Services
         /// </summary>
         /// <param name="ct">取消标记。</param>
         Task<Output.CurrentRoundOutput?> GetCurrentRoundAsync(CancellationToken ct);
+
+        /// <summary>
+        /// 获取最近结束的回合记录。
+        /// </summary>
+        /// <param name="count">需要的回合数量。</param>
+        /// <param name="ct">取消标记。</param>
+        Task<IList<Output.HistoryRoundOutput>> GetHistoryAsync(int count, CancellationToken ct);
+
+        /// <summary>
+        /// 获取即将开始的回合列表。
+        /// </summary>
+        /// <param name="count">需要的回合数量。</param>
+        /// <param name="ct">取消标记。</param>
+        Task<IList<Output.UpcomingRoundOutput>> GetUpcomingAsync(int count, CancellationToken ct);
+
+        /// <summary>
+        /// 获取图表数据。
+        /// </summary>
+        /// <param name="ct">取消标记。</param>
+        Task<Output.ChartDataOutput> GetChartDataAsync(CancellationToken ct);
     }
 }

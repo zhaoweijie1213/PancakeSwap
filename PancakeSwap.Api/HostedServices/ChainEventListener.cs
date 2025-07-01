@@ -4,10 +4,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.SignalR;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Web3;
 using PancakeSwap.Application.Services;
 using PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefinition;
+using PancakeSwap.Api.Hubs;
 
 namespace PancakeSwap.Api.HostedServices
 {
@@ -19,6 +21,7 @@ namespace PancakeSwap.Api.HostedServices
         private readonly IWeb3 _web3;
         private readonly IRoundService _roundService;
         private readonly ILogger<ChainEventListener> _logger;
+        private readonly IHubContext<PredictionHub> _hubContext;
         private readonly string _contractAddress;
         private Nethereum.Hex.HexTypes.HexBigInteger? _filterId;
         private Nethereum.Contracts.Event<EndRoundEventDTO>? _event;
@@ -34,11 +37,13 @@ namespace PancakeSwap.Api.HostedServices
             IConfiguration configuration,
             IWeb3 web3,
             IRoundService roundService,
-            ILogger<ChainEventListener> logger)
+            ILogger<ChainEventListener> logger,
+            IHubContext<PredictionHub> hubContext)
         {
             _web3 = web3;
             _roundService = roundService;
             _logger = logger;
+            _hubContext = hubContext;
             _contractAddress = configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty;
         }
 
@@ -63,6 +68,7 @@ namespace PancakeSwap.Api.HostedServices
                     {
                         var epoch = (long)log.Event.Epoch;
                         await _roundService.SettleRoundAsync(epoch, stoppingToken);
+                        await _hubContext.Clients.All.SendAsync("roundEnded", new { id = epoch }, stoppingToken);
                     }
                 }
                 catch (OperationCanceledException)

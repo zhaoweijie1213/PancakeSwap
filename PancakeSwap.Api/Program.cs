@@ -22,6 +22,7 @@ var rpc = builder.Configuration.GetValue<string>("BSC_RPC");
 builder.Services.AddSingleton<IWeb3>(_ => new Web3(rpc));
 builder.Services.AddHostedService<ChainEventListener>();
 builder.Services.AddHostedService<RoundBroadcastService>();
+builder.Services.AddHostedService<ChartBroadcastService>();
 
 var app = builder.Build();
 
