@@ -1,37 +1,31 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualStudio.TestPlatform.TestHost;
 using Moq;
 using PancakeSwap.Application.Enums;
 using PancakeSwap.Application.Services;
 using PancakeSwap.Infrastructure.Database;
+using PancakeSwap.Infrastructure.Database.Entities;
 using PancakeSwap.Infrastructure.Database.Migrations;
 using PancakeSwap.Infrastructure.Services;
 using SqlSugar;
-using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
-using PancakeSwap.Infrastructure.Database.Entities;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 
 namespace PancakeSwap.Test;
 
-public class RoundServiceTests
+public class RoundServiceTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
 {
-    private static ApplicationDbContext CreateContext()
-    {
-        var dbPath = Path.GetTempFileName();
-        var context = new ApplicationDbContext(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>
-        {
-            {"ConnectionStrings:Default", $"DataSource={dbPath}"}
-        }).Build());
-        context.Db.DbMaintenance.CreateDatabase();
-        InitMigration.Run(context.Db);
-        return context;
-    }
+    private readonly IServiceProvider _serviceProvider = factory.Services;
 
     [Fact]
     public async Task Should_Throw_When_NoPrice()
     {
-        var context = CreateContext();
+        var context = _serviceProvider.GetRequiredService<ApplicationDbContext>();
         await context.Db.Insertable(new RoundEntity
         {
             Epoch = 1,
@@ -53,7 +47,7 @@ public class RoundServiceTests
     [Fact]
     public async Task Should_Mark_Bull_Wins_When_ClosePrice_Higher()
     {
-        var context = CreateContext();
+        var context = _serviceProvider.GetRequiredService<ApplicationDbContext>();
         await context.Db.Insertable(new RoundEntity
         {
             Epoch = 1,

@@ -38,3 +38,8 @@ var dbContext = app.Services.GetRequiredService<ApplicationDbContext>();
 InitMigration.Run(dbContext.Db);
 
 app.Run();
+
+/// <summary>
+///  Required for testing purposes
+/// </summary>
+public partial class Program { } 
