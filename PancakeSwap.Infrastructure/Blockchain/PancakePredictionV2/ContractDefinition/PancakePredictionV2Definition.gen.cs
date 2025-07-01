@@ -1,3 +1,5 @@
+// 本文件由 Nethereum CodeGen 自动生成，包含 PancakePredictionV2 合约的函数、事件和 DTO 定义。
+// 如无必要请勿手动修改。
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
