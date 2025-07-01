@@ -12,7 +12,7 @@ namespace PancakeSwap.Application.Database.Repository
     /// <summary>
     /// 下注仓库接口
     /// </summary>
-    public interface IBetRepository : IBaseRepository<BetEntity> , ITransientDependency
+    public interface IBetRepository : IBaseRepository<BetEntity>, ITransientDependency
     {
 
     }
