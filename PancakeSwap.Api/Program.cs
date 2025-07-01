@@ -1,6 +1,10 @@
 using PancakeSwap.Application.Database.Config;
 using PancakeSwap.Infrastructure.Database;
 using PancakeSwap.Infrastructure.Database.Migrations;
+using PancakeSwap.Application.Services;
+using PancakeSwap.Infrastructure.Services;
+using PancakeSwap.Api.HostedServices;
+using Nethereum.Web3;
 using QYQ.Base.Common.IOCExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +14,11 @@ builder.AddQYQSerilog();
 builder.Services.AddControllers();
 builder.Services.AddSingleton<ApplicationDbContext>();
 builder.Services.Configure<DatabaseConfig>(builder.Configuration.GetSection("ConnectionStrings:Default"));
+
+var rpc = builder.Configuration.GetValue<string>("BSC_RPC");
+builder.Services.AddSingleton<IWeb3>(_ => new Web3(rpc));
+builder.Services.AddSingleton<IRoundService, RoundService>();
+builder.Services.AddHostedService<ChainEventListener>();
 
 var app = builder.Build();
 
