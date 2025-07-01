@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PancakeSwap.Application\PancakeSwap.Application.csproj" />
+    <ProjectReference Include="..\PancakeSwap.Infrastructure\PancakeSwap.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
