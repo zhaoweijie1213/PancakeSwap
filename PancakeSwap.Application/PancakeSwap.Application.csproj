@@ -13,8 +13,4 @@
     <PackageReference Include="QYQ.Base.Swagger" Version="8.0.7" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Database\Config\" />
-  </ItemGroup>
-
 </Project>
