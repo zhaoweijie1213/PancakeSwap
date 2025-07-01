@@ -147,7 +147,7 @@ dotnet ef database update --project PancakeSwap.Infrastructure --startup-project
 > ```
 > 1. 注册 SignalR Hub /predictionHub，向客户端推送：
 >    { epoch, secondsRemaining, bullAmount, bearAmount }
-> 2. 创建 Minimal API:
+> 2. 创建 API:
 >    POST /predictions/{epoch}/bet  -> 返回待签名交易数据
 >    GET  /predictions/current      -> 返回当前回合详情
 > ```
