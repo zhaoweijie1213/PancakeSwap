@@ -41,6 +41,7 @@ public class ExampleRepository(ILogger<ExampleRepository> logger, IOptionsMonito
 - 必须通过 `dotnet format --verify-no-changes`（已在 pre-commit 钩子）
 - 公共 API 须带 XML 注释；Domain 层禁止直接引用 **SqlSugar**，仅能通过 Application 层定义的接口访问持久化逻辑
 - 不得把私钥、Token 写进源码，使用 `<ENV_*>` 占位
+- 注释使用简体中文
 
 ### 1.2 通用命名
 
@@ -57,7 +58,9 @@ dotnet add package QYQ.Base.SqlSugar
 docker compose up -d db redis bsc-node
 ```
 
-## 3. 程序化检查（Codex 必须全部通过）
+## 3. 代码质量检查（必须全部通过）
+
+先检测是否所有方法和属性都有注释,如果没有则补充完善,然后进行质量检查(注释必须描述属性的作用、方法的功能，保证初学者可以看懂,不能敷衍)
 
 ```bash
 dotnet format --verify-no-changes

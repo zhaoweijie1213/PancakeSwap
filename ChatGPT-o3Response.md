@@ -89,7 +89,7 @@ dotnet format --verify-no-changes
 > Round 字段：Epoch(bigint PK)、StartTime、LockTime、CloseTime、
 > LockPrice(decimal18,8)、ClosePrice(decimal18,8)、Status(int)、TotalAmount、BullAmount、BearAmount。
 > Bet 字段：Id, Epoch, Address, Amount, Position(int)。
-> 用 EF Core PostgreSQL 生成 DbContext 和首个迁移 Init。
+> 用 SqlSugar PostgreSQL 生成 DbContext 和首个迁移 Init。
 > ```
 
 人工检查
