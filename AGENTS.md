@@ -42,6 +42,9 @@ public class ExampleRepository(ILogger<ExampleRepository> logger, IOptionsMonito
 - 公共 API 须带 XML 注释；Domain 层禁止直接引用 **SqlSugar**，仅能通过 Application 层定义的接口访问持久化逻辑
 - 不得把私钥、Token 写进源码，使用 `<ENV_*>` 占位
 - 注释使用简体中文
+- api接口统一使用ApiResult<T>返回格式，命名空间为using QYQ.Base.Common.ApiResult;
+- API返回的定义使用 {xxx}Output统一后缀 例如：UserOutput ,统一放在*Application*层 的Output文件夹
+- 复杂请求参数需要定义class 名称为 {xxx}Input 后缀 例如：UserInput,统一放在*Application*层 的Input文件夹
 
 ### 1.2 通用命名
 
