@@ -11,19 +11,14 @@ namespace PancakeSwap.Api.Controllers
     /// <summary>
     /// 提供回合相关查询接口。
     /// </summary>
+    /// <remarks>
+    /// 构造函数。
+    /// </remarks>
     [ApiController]
     [Route("/rounds")]
-    public class RoundsController : ControllerBase
+    public class RoundsController(IRoundService roundService) : ControllerBase
     {
-        private readonly IRoundService _roundService;
-
-        /// <summary>
-        /// 构造函数。
-        /// </summary>
-        public RoundsController(IRoundService roundService)
-        {
-            _roundService = roundService;
-        }
+        private readonly IRoundService _roundService = roundService;
 
         /// <summary>
         /// 获取历史回合信息。

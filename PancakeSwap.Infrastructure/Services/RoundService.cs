@@ -122,7 +122,12 @@ namespace PancakeSwap.Infrastructure.Services
             };
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 获取历史回合记录。
+        /// </summary>
+        /// <param name="count"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<List<HistoryRoundOutput>> GetHistoryAsync(int count, CancellationToken ct)
         {
             var rounds = await _context.Db.Queryable<RoundEntity>()
@@ -156,7 +161,12 @@ namespace PancakeSwap.Infrastructure.Services
             return list;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 获取即将开始的回合列表。
+        /// </summary>
+        /// <param name="count"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<List<UpcomingRoundOutput>> GetUpcomingAsync(int count, CancellationToken ct)
         {
             var now = DateTime.UtcNow;
@@ -180,7 +190,11 @@ namespace PancakeSwap.Infrastructure.Services
             return list;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 获取图表数据，包含最近10分钟内的回合收盘价格。
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<ChartDataOutput> GetChartDataAsync(CancellationToken ct)
         {
             var since = DateTime.UtcNow.AddMinutes(-10);
