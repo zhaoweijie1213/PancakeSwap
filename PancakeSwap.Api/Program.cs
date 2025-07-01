@@ -12,12 +12,12 @@ builder.AddQYQSerilog();
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddMultipleService("^PancakeSwap");
 builder.Services.AddSingleton<ApplicationDbContext>();
 builder.Services.Configure<DatabaseConfig>(builder.Configuration.GetSection("ConnectionStrings:Default"));
 
 var rpc = builder.Configuration.GetValue<string>("BSC_RPC");
 builder.Services.AddSingleton<IWeb3>(_ => new Web3(rpc));
-builder.Services.AddSingleton<IRoundService, RoundService>();
 builder.Services.AddHostedService<ChainEventListener>();
 
 var app = builder.Build();

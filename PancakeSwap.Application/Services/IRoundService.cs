@@ -1,3 +1,4 @@
+using QYQ.Base.Common.IOCExtensions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,7 +7,7 @@ namespace PancakeSwap.Application.Services
     /// <summary>
     /// 定义回合相关的业务操作。
     /// </summary>
-    public interface IRoundService
+    public interface IRoundService : ISingletonDependency
     {
         /// <summary>
         /// 创建下一回合并返回其 Epoch。
