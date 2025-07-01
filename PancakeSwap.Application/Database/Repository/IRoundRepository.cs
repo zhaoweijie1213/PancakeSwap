@@ -12,7 +12,7 @@ namespace PancakeSwap.Application.Database.Repository
     /// <summary>
     /// 每回合的仓库接口
     /// </summary>
-    public interface IRoundRepository : IBaseRepository<BetEntity>, ITransientDependency
+    public interface IRoundRepository : IBaseRepository<RoundEntity>, ITransientDependency
     {
 
     }
