@@ -68,5 +68,11 @@ namespace PancakeSwap.Application.Database.Entities
         /// </summary>
         [SugarColumn(ColumnName = "bear_amount", ColumnDataType = "decimal(18,8)")]
         public decimal BearAmount { get; set; }
+
+        /// <summary>
+        /// 获胜方向，0 表示看涨，1 表示看跌。
+        /// </summary>
+        [SugarColumn(ColumnName = "winning_position", IsNullable = true)]
+        public int? WinningPosition { get; set; }
     }
 }

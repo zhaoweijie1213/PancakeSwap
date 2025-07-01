@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Nethereum.Web3;
 using PancakeSwap.Application.Database.Entities;
 using PancakeSwap.Application.Enums;
 using PancakeSwap.Application.Output;
@@ -19,24 +16,18 @@ namespace PancakeSwap.Infrastructure.Services
     /// </summary>
     public class RoundService : IRoundService
     {
-        private const string LatestAnswerAbi =
-            "[{\"inputs\":[],\"name\":\"latestAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]";
-
         private readonly ApplicationDbContext _context;
-        private readonly IWeb3 _web3;
-        private readonly string _oracleAddress;
+        private readonly IPriceFeed _priceFeed;
 
         /// <summary>
         /// 初始化服务实例。
         /// </summary>
         /// <param name="context">数据库上下文。</param>
-        /// <param name="web3">Web3 实例。</param>
-        /// <param name="configuration">配置读取实例。</param>
-        public RoundService(ApplicationDbContext context, IWeb3 web3, IConfiguration configuration)
+        /// <param name="priceFeed">价格源。</param>
+        public RoundService(ApplicationDbContext context, IPriceFeed priceFeed)
         {
             _context = context;
-            _web3 = web3;
-            _oracleAddress = configuration.GetValue<string>("CHAINLINK_ORACLE");
+            _priceFeed = priceFeed;
         }
 
         /// <inheritdoc />
@@ -61,12 +52,16 @@ namespace PancakeSwap.Infrastructure.Services
         /// <inheritdoc />
         public async Task LockRoundAsync(long epoch, CancellationToken ct)
         {
-            var price = await FetchLatestPriceAsync();
+            var price = await _priceFeed.GetLatestPriceAsync(ct);
+            if (price == null)
+            {
+                throw new InvalidOperationException("Price unavailable");
+            }
 
             await _context.Db.Updateable<RoundEntity>()
                 .SetColumns(r => new RoundEntity
                 {
-                    LockPrice = price,
+                    LockPrice = price.Value,
                     LockTime = DateTime.UtcNow,
                     Status = (int)RoundStatus.Locked
                 })
@@ -77,7 +72,11 @@ namespace PancakeSwap.Infrastructure.Services
         /// <inheritdoc />
         public async Task SettleRoundAsync(long epoch, CancellationToken ct)
         {
-            var closePrice = await FetchLatestPriceAsync();
+            var closePrice = await _priceFeed.GetLatestPriceAsync(ct);
+            if (closePrice == null)
+            {
+                throw new InvalidOperationException("Price unavailable");
+            }
             var round = await _context.Db.Queryable<RoundEntity>()
                 .Where(r => r.Epoch == epoch)
                 .FirstAsync();
@@ -86,12 +85,14 @@ namespace PancakeSwap.Infrastructure.Services
                 return;
             }
 
+            var winner = closePrice > round.LockPrice ? (int)BetPosition.Bull : (int)BetPosition.Bear;
             await _context.Db.Updateable<RoundEntity>()
                 .SetColumns(r => new RoundEntity
                 {
-                    ClosePrice = closePrice,
+                    ClosePrice = closePrice.Value,
                     CloseTime = DateTime.UtcNow,
-                    Status = (int)RoundStatus.Ended
+                    Status = (int)RoundStatus.Ended,
+                    WinningPosition = winner
                 })
                 .Where(r => r.Epoch == epoch)
                 .ExecuteCommandAsync();
@@ -198,12 +199,5 @@ namespace PancakeSwap.Infrastructure.Services
             return output;
         }
 
-        private async Task<decimal> FetchLatestPriceAsync()
-        {
-            var contract = _web3.Eth.GetContract(LatestAnswerAbi, _oracleAddress);
-            var function = contract.GetFunction("latestAnswer");
-            var value = await function.CallAsync<BigInteger>();
-            return (decimal)value / 1_00000000m;
-        }
     }
 }
