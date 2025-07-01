@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Nethereum.Web3;
 using PancakeSwap.Application.Database.Entities;
 using PancakeSwap.Application.Enums;
+using PancakeSwap.Application.Output;
 using PancakeSwap.Application.Services;
 using PancakeSwap.Infrastructure.Database;
 using SqlSugar;
@@ -93,6 +94,30 @@ namespace PancakeSwap.Infrastructure.Services
                 })
                 .Where(r => r.Epoch == epoch)
                 .ExecuteCommandAsync();
+        }
+
+        /// <inheritdoc />
+        public async Task<CurrentRoundOutput?> GetCurrentRoundAsync(CancellationToken ct)
+        {
+            var now = DateTime.UtcNow;
+            var round = await _context.Db.Queryable<RoundEntity>()
+                .Where(r => r.Status != (int)RoundStatus.Ended)
+                .OrderBy(r => r.Epoch, OrderByType.Desc)
+                .FirstAsync();
+
+            if (round == null)
+            {
+                return null;
+            }
+
+            var secondsRemaining = (int)Math.Max(0, (round.CloseTime - now).TotalSeconds);
+            return new CurrentRoundOutput
+            {
+                Epoch = round.Epoch,
+                SecondsRemaining = secondsRemaining,
+                BullAmount = round.BullAmount,
+                BearAmount = round.BearAmount
+            };
         }
 
         private async Task<decimal> FetchLatestPriceAsync()

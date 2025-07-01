@@ -29,5 +29,11 @@ namespace PancakeSwap.Application.Services
         /// <param name="epoch">回合编号。</param>
         /// <param name="ct">取消标记。</param>
         Task SettleRoundAsync(long epoch, CancellationToken ct);
+
+        /// <summary>
+        /// 获取当前回合信息。
+        /// </summary>
+        /// <param name="ct">取消标记。</param>
+        Task<Output.CurrentRoundOutput?> GetCurrentRoundAsync(CancellationToken ct);
     }
 }
