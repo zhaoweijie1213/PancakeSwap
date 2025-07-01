@@ -16,6 +16,7 @@ npm install
 
 环境变量：
 - `BSC_TESTNET_RPC`：BSC 测试网 RPC 地址
+- `BSC_RPC`：后台监听事件的 BSC RPC 地址
 - `PRIVATE_KEY`：部署或测试用私钥
 - `PG_CONNECTION`：PostgreSQL 连接字符串
 
