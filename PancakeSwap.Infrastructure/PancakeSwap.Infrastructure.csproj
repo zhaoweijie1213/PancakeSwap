@@ -10,7 +10,7 @@
     <ProjectReference Include="..\PancakeSwap.Application\PancakeSwap.Application.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Nethereum.Web3" Version="4.12.1" />
+    <PackageReference Include="Nethereum.Web3" Version="5.0.0" />
   </ItemGroup>
 
 </Project>
