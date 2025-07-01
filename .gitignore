@@ -7,5 +7,6 @@ node_modules/
 artifacts/
 cache/
 typechain/
+typechain-types/
 .env
 dotnet-install.sh
