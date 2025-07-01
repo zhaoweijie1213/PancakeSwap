@@ -5,8 +5,8 @@ namespace PancakeSwap.Application.Database.Entities
     /// <summary>
     /// Represents a bet within a round.
     /// </summary>
-    [SugarTable("bets")]
-    public class Bet
+    [SugarTable("bet")]
+    public class BetEntity
     {
         /// <summary>
         /// 

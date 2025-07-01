@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Database\Repository\" />
+    <Folder Include="Database\Config\" />
   </ItemGroup>
 
 </Project>

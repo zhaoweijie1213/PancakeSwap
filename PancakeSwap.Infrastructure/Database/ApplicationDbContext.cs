@@ -24,7 +24,7 @@ namespace PancakeSwap.Infrastructure.Database
             Db = new SqlSugarScope(new ConnectionConfig
             {
                 ConnectionString = connectionString,
-                DbType = DbType.PostgreSQL,
+                DbType = DbType.Sqlite,
                 IsAutoCloseConnection = true,
                 InitKeyType = InitKeyType.Attribute
             });

@@ -6,8 +6,8 @@ namespace PancakeSwap.Application.Database.Entities
     /// <summary>
     /// Represents a prediction round.
     /// </summary>
-    [SugarTable("rounds")]
-    public class Round
+    [SugarTable("round")]
+    public class RoundEntity
     {
         /// <summary>
         /// Epoch identifier.
