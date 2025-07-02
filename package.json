@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "compile": "hardhat compile",
-        "node": "hardhat node",
+        "node": "npx hardhat node --hostname 0.0.0.0 --port 8545",
         "test": "hardhat test",
         "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
         "keeper:local": "ts-node scripts/keeper.ts --network localhost",
