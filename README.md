@@ -64,7 +64,10 @@ npm run deploy:local
 
 **自动开奖**
 
+1. 前端
+
 ```bash
 npm run keeper:local    # 终端 C：自动开奖
 ```
 
+2. 后端使用ExecuteRoundWorker自动执行创世区块和每轮开奖
