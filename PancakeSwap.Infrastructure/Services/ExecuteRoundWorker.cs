@@ -4,13 +4,11 @@ using Microsoft.Extensions.Logging;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Web3;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using Nethereum.Web3.Accounts;
-using Nethereum.RPC.Eth.DTOs;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace PancakeSwap.Infrastructure.Services
 {
@@ -27,6 +25,7 @@ namespace PancakeSwap.Infrastructure.Services
         private readonly uint _intervalSeconds;    // 回合时长（300）
         private readonly TimeSpan _pollInterval;   // 每隔多久检查一次并调用
         private readonly string _networkName;
+        private readonly bool _isDevelopment;
 
         public ExecuteRoundWorker(IConfiguration cfg, ILogger<ExecuteRoundWorker> logger)
         {
@@ -37,13 +36,19 @@ namespace PancakeSwap.Infrastructure.Services
             var pk = cfg["OPERATOR_PK"] ?? throw new("OPERATOR_PK 未配置");
             var contract = cfg["PREDICTION_ADDRESS"] ?? throw new("PREDICTION_ADDRESS 未配置");
             _networkName = cfg["ASPNETCORE_ENVIRONMENT"] ?? "Development";
+            _isDevelopment = string.Equals(_networkName, "Development", StringComparison.OrdinalIgnoreCase);
 
             // 创建签名账号
             var account = new Account(pk);
             _web3Tx = new Web3(account, rpc);
 
             // 连接合约（只需要 ABI）
-            var abi = Blockchain.PancakePredictionV2.PancakePredictionV2Service.ABI;
+            var asm = typeof(ExecuteRoundWorker).Assembly;
+            var resource = "PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.abi";
+            using var stream = asm.GetManifestResourceStream(resource)
+                ?? throw new InvalidOperationException("ABI resource not found");
+            using var reader = new StreamReader(stream);
+            var abi = reader.ReadToEnd();
             _contract = _web3Tx.Eth.GetContract(abi, contract);
 
             // 读取 intervalSeconds (一次即可)
@@ -60,6 +65,51 @@ namespace PancakeSwap.Infrastructure.Services
 
             var executeFn = _contract.GetFunction("executeRound");
             var lockFn = _contract.GetFunction("genesisLockRound");   // 仅本地链调试可用
+            var startFn = _contract.GetFunction("genesisStartRound");
+            var startOnceFn = _contract.GetFunction("genesisStartOnce");
+            var lockOnceFn = _contract.GetFunction("genesisLockOnce");
+
+            if (_isDevelopment)
+            {
+                // 本地环境首次启动时需要调用 genesisStartRound 与 genesisLockRound
+                if (!await startOnceFn.CallAsync<bool>())
+                {
+                    try
+                    {
+                        var gas = await startFn.EstimateGasAsync().ConfigureAwait(false);
+                        var receipt = await startFn.SendTransactionAndWaitForReceiptAsync(
+                            from: _web3Tx.TransactionManager.Account.Address,
+                            gas: gas,
+                            value: new HexBigInteger(BigInteger.Zero));
+
+                        _logger.LogInformation("✅ genesisStartRound tx {Hash} | block {Block}",
+                            receipt.TransactionHash, receipt.BlockNumber.Value);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "genesisStartRound failed");
+                    }
+                }
+
+                if (!await lockOnceFn.CallAsync<bool>())
+                {
+                    try
+                    {
+                        var gas = await lockFn.EstimateGasAsync().ConfigureAwait(false);
+                        var receipt = await lockFn.SendTransactionAndWaitForReceiptAsync(
+                            from: _web3Tx.TransactionManager.Account.Address,
+                            gas: gas,
+                            value: new HexBigInteger(BigInteger.Zero));
+
+                        _logger.LogInformation("✅ genesisLockRound tx {Hash} | block {Block}",
+                            receipt.TransactionHash, receipt.BlockNumber.Value);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "genesisLockRound failed");
+                    }
+                }
+            }
 
             while (!stoppingToken.IsCancellationRequested)
             {
