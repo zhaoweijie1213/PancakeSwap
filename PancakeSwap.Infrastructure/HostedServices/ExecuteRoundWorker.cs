@@ -24,6 +24,7 @@ namespace PancakeSwap.Infrastructure.HostedServices
 
         private readonly uint _intervalSeconds;    // 回合时长（300）
         private readonly TimeSpan _pollInterval;   // 每隔多久检查一次并调用
+        private readonly uint _bufferSeconds;      // 可执行时间缓冲区
 
         private readonly IHostEnvironment _hostEnvironment;
 
@@ -49,11 +50,12 @@ namespace PancakeSwap.Infrastructure.HostedServices
             var abi = reader.ReadToEnd();
             _contract = _web3Tx.Eth.GetContract(abi, contract);
 
-            // 读取 intervalSeconds (一次即可)
+            // 读取 intervalSeconds 与 bufferSeconds（一次即可）
             _intervalSeconds = _contract.GetFunction("intervalSeconds").CallAsync<uint>().Result;
+            _bufferSeconds = _contract.GetFunction("bufferSeconds").CallAsync<uint>().Result;
 
             // 建议  (interval + buffer) / 2 轮询一次，避免重复
-            _pollInterval = TimeSpan.FromSeconds(_intervalSeconds / 2);
+            _pollInterval = TimeSpan.FromSeconds((_intervalSeconds + _bufferSeconds) / 2);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -91,6 +93,9 @@ namespace PancakeSwap.Infrastructure.HostedServices
                 {
                     try
                     {
+                        _logger.LogInformation("等待 {Delay}s 后调用 genesisLockRound", _intervalSeconds);
+                        await Task.Delay(TimeSpan.FromSeconds(_intervalSeconds), stoppingToken);
+
                         var gas = await lockFn.EstimateGasAsync();
                         var rc = await lockFn.SendTransactionAndWaitForReceiptAsync(
                                     _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
