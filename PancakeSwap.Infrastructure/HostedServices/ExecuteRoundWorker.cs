@@ -101,11 +101,12 @@ namespace PancakeSwap.Infrastructure.HostedServices
         }
 
         /// <summary>
-        /// 新增：本地链快进工具
+        /// 在本地 Hardhat 网络上通过增加区块时间加速等待，
+        /// 其他环境则按给定秒数延时。
         /// </summary>
-        /// <param name="seconds"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
+        /// <param name="seconds">需要等待的秒数。</param>
+        /// <param name="ct">取消标记。</param>
+        /// <returns>异步任务。</returns>
         private async Task SleepOrFastForward(uint seconds, CancellationToken ct)
         {
             var chainId = (await _web3Tx.Net.Version.SendRequestAsync()).ToString();
@@ -120,20 +121,31 @@ namespace PancakeSwap.Infrastructure.HostedServices
             }
         }
 
+        /// <summary>
+        /// 随机调整价格并推送到本地预言机，
+        /// 仅在配置 <c>MOCK_ORACLE_ADDR</c> 时执行。
+        /// </summary>
+        /// <param name="ct">取消标记。</param>
         private async Task UpdateMockPriceAsync(CancellationToken ct)
         {
             if (_mockOracle == null) return;
 
             var updateFn = _mockOracle.GetFunction("updateAnswer");
-            var basePrice = 300m;
+            const decimal basePrice = 300m;
             var delta = basePrice * ((decimal)_random.NextDouble() * 0.02m - 0.01m);
-            var price = (decimal)Math.Floor((basePrice + delta) * 1_00000000m);
-            var gas = await updateFn.EstimateGasAsync(price);
+            var priceValue = new BigInteger((long)Math.Floor((basePrice + delta) * 1_00000000m));
+
+            var gas = await updateFn.EstimateGasAsync(
+                _web3Tx.TransactionManager.Account.Address,
+                gas: null,
+                value: null,
+                functionInput: priceValue);
+
             await updateFn.SendTransactionAndWaitForReceiptAsync(
                 _web3Tx.TransactionManager.Account.Address,
                 gas: gas,
                 value: new HexBigInteger(BigInteger.Zero),
-                functionInput: price);
+                functionInput: priceValue);
         }
 
         /// <summary>
