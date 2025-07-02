@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using SqlSugar;
-using PancakeSwap.Infrastructure.Database.Entities;
 
 namespace PancakeSwap.Infrastructure.Database
 {

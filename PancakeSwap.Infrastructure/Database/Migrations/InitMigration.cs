@@ -1,5 +1,5 @@
+using PancakeSwap.Application.Database.Entities;
 using SqlSugar;
-using PancakeSwap.Infrastructure.Database.Entities;
 
 namespace PancakeSwap.Infrastructure.Database.Migrations
 {

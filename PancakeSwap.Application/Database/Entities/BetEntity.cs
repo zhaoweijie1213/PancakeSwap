@@ -16,10 +16,10 @@ namespace PancakeSwap.Application.Database.Entities
         public long Id { get; set; }
 
         /// <summary>
-        /// 所属回合编号。
+        /// 通常翻译成 “回合编号” 或 “期次”，用来唯一标识一轮竞猜的完整生命周期
         /// </summary>
         [SugarColumn(ColumnName = "epoch_id")]
-        public long EpochId { get; set; }
+        public long Epoch { get; set; }
 
         /// <summary>
         /// 用户地址。

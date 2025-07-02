@@ -28,7 +28,11 @@ namespace PancakeSwap.Api.HostedServices
             _logger = logger;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 执行后台服务逻辑
+        /// </summary>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
