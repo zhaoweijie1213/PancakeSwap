@@ -4,7 +4,8 @@
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "BSC_RPC": "http://127.0.0.1:8545"
+        "BSC_RPC": "http://127.0.0.1:8545",
+        "PREDICTION_ADDRESS": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5066"

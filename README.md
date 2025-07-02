@@ -38,4 +38,33 @@ npx hardhat compile
 ```
 
 ## 部署说明
+### bsctest测试网测试
+
 在配置好环境变量后，执行 `npx hardhat run --network bsctest scripts/deploy.ts` 部署到 BSC 测试网。
+
+### localhost测试
+
+**运行本地链**
+
+```bash
+npm run node  # 终端 A：本地链
+```
+
+**部署MockAggregator代替Chainlink 预言机**
+
+```bash
+npm run deploy:local:mock  # 终端 B：MockAggregator
+```
+
+**部署智能合约**
+
+```bash
+npm run deploy:local
+```
+
+**自动开奖**
+
+```bash
+npm run keeper:local    # 终端 C：自动开奖
+```
+

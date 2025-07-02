@@ -24,6 +24,7 @@ builder.Services.AddSingleton<IPriceFeed, ChainlinkPriceFeed>();
 builder.Services.AddHostedService<ChainEventListener>();
 builder.Services.AddHostedService<RoundBroadcastService>();
 builder.Services.AddHostedService<ChartBroadcastService>();
+builder.Services.AddHostedService<ExecuteRoundWorker>();
 
 var app = builder.Build();
 

@@ -10,3 +10,4 @@ typechain/
 typechain-types/
 .env
 dotnet-install.sh
+logs
