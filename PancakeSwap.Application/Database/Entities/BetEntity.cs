@@ -13,7 +13,7 @@ namespace PancakeSwap.Application.Database.Entities
         /// 主键编号。
         /// </summary>
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true, ColumnName = "id")]
-        public long Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// 通常翻译成 “回合编号” 或 “期次”，用来唯一标识一轮竞猜的完整生命周期

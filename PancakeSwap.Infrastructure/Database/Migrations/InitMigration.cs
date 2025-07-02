@@ -14,7 +14,9 @@ namespace PancakeSwap.Infrastructure.Database.Migrations
         /// <param name="db">SqlSugar client.</param>
         public static void Run(ISqlSugarClient db)
         {
-            db.CodeFirst.InitTables<RoundEntity, BetEntity, PriceSnapshotEntity>();
+            db.CodeFirst.InitTables<RoundEntity>();
+            db.CodeFirst.InitTables<BetEntity>();
+            db.CodeFirst.InitTables<PriceSnapshotEntity>();
         }
     }
 }

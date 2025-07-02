@@ -33,6 +33,7 @@ namespace PancakeSwap.Api.HostedServices
         /// <param name="web3">Web3 实例。</param>
         /// <param name="roundService">回合服务。</param>
         /// <param name="logger">日志组件。</param>
+        /// <param name="hubContext"></param>
         public ChainEventListener(
             IConfiguration configuration,
             IWeb3 web3,

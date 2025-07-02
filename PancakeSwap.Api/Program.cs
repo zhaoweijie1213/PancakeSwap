@@ -34,8 +34,8 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<PredictionHub>("/predictionHub");
 
-var dbContext = app.Services.GetRequiredService<ApplicationDbContext>();
-InitMigration.Run(dbContext.Db);
+//var dbContext = app.Services.GetRequiredService<ApplicationDbContext>();
+//InitMigration.Run(dbContext.Db);
 
 app.Run();
 

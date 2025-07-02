@@ -1,25 +1,34 @@
-import { ethers } from 'hardhat';
+// deploy.ts
+import * as dotenv from 'dotenv';
+dotenv.config();
+import { ethers, network } from 'hardhat';
 
 async function main() {
+    // 根据当前 network 选合适的 oracle
+    // Chainlink BNB / USD 预言机合约地址
+    const oracle = network.name === 'bsctest' ? process.env.ORACLE_TEST : process.env.ORACLE_MAIN;
+    //项目“超级管理员”帐号
+    const admin = process.env.ADMIN!;
+    //负责 定时执行 executeRound() 的机器人地址
+    const operator = process.env.OPERATOR!;
+
     const Prediction = await ethers.getContractFactory('PancakePredictionV2');
-    const oracle = '0x0567F232…'; // BNB/USD 预言机
-    const admin = '0xYourAdmin';
-    const operator = '0xYourKeeperBot';
     const contract = await Prediction.deploy(
         oracle,
         admin,
         operator,
-        300, // _intervalSeconds  ← 改成 300 秒
-        60, // _bufferSeconds    ← 提前/延迟容忍 60 s
-        ethers.parseEther('0.01'), // _minBetAmount     ← 0.01 BNB
-        300, // _oracleUpdateAllowance
-        400 // _treasuryFee = 4 %
+        300, // intervalSeconds
+        60, // bufferSeconds
+        ethers.parseEther('0.01'), // minBetAmount
+        300, // oracleUpdateAllowance
+        400 // treasuryFee (4 %)
     );
+
     await contract.waitForDeployment();
-    console.log('Prediction deployed:', contract.target);
+    console.log('Prediction deployed at:', contract.target);
 }
 
-main().catch((error) => {
-    console.error(error);
+main().catch((e) => {
+    console.error(e);
     process.exitCode = 1;
 });

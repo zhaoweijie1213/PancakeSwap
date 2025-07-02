@@ -13,7 +13,7 @@ namespace PancakeSwap.Application.Database.Entities
         /// 主键编号。
         /// </summary>
         [SugarColumn(IsPrimaryKey = true, IsIdentity = true, ColumnName = "id")]
-        public long Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// 时间戳。

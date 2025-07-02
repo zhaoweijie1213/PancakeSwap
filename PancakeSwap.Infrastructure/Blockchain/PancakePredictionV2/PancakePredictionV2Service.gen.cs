@@ -251,7 +251,9 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2
 
         public virtual Task<TransactionReceipt> GenesisLockRoundRequestAndWaitForReceiptAsync(CancellationTokenSource cancellationToken = null)
         {
+#pragma warning disable CS8625 // 无法将 null 字面量转换为非 null 的引用类型。
             return ContractHandler.SendRequestAndWaitForReceiptAsync<GenesisLockRoundFunction>(null, cancellationToken);
+#pragma warning restore CS8625 // 无法将 null 字面量转换为非 null 的引用类型。
         }
 
         public Task<bool> GenesisStartOnceQueryAsync(GenesisStartOnceFunction genesisStartOnceFunction, BlockParameter blockParameter = null)

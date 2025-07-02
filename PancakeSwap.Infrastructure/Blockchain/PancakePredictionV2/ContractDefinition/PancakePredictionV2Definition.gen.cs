@@ -22,8 +22,12 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefi
     public class PancakePredictionV2DeploymentBase : ContractDeploymentMessage
     {
         public static string BYTECODE = "";
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public PancakePredictionV2DeploymentBase() : base(BYTECODE) { }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public PancakePredictionV2DeploymentBase(string byteCode) : base(byteCode) { }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         [Parameter("address", "_oracleAddress", 1)]
         public virtual string OracleAddress { get; set; }
         [Parameter("address", "_adminAddress", 2)]
@@ -90,7 +94,9 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefi
     public class ClaimFunctionBase : FunctionMessage
     {
         [Parameter("uint256[]", "epochs", 1)]
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public virtual List<BigInteger> Epochs { get; set; }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
     }
 
     public partial class ClaimTreasuryFunction : ClaimTreasuryFunctionBase { }
@@ -109,7 +115,9 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefi
         [Parameter("uint256", "epoch", 1)]
         public virtual BigInteger Epoch { get; set; }
         [Parameter("address", "user", 2)]
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public virtual string User { get; set; }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
     }
 
     public partial class CurrentEpochFunction : CurrentEpochFunctionBase { }
@@ -166,7 +174,9 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefi
     public class GetUserRoundsFunctionBase : FunctionMessage
     {
         [Parameter("address", "user", 1)]
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public virtual string User { get; set; }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         [Parameter("uint256", "cursor", 2)]
         public virtual BigInteger Cursor { get; set; }
         [Parameter("uint256", "size", 3)]
@@ -179,7 +189,9 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefi
     public class GetUserRoundsLengthFunctionBase : FunctionMessage
     {
         [Parameter("address", "user", 1)]
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public virtual string User { get; set; }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
     }
 
     public partial class IntervalSecondsFunction : IntervalSecondsFunctionBase { }
@@ -198,7 +210,9 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefi
         [Parameter("uint256", "", 1)]
         public virtual BigInteger ReturnValue1 { get; set; }
         [Parameter("address", "", 2)]
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public virtual string ReturnValue2 { get; set; }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
     }
 
     public partial class MinBetAmountFunction : MinBetAmountFunctionBase { }
@@ -271,7 +285,9 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefi
     public class RecoverTokenFunctionBase : FunctionMessage
     {
         [Parameter("address", "_token", 1)]
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public virtual string Token { get; set; }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         [Parameter("uint256", "_amount", 2)]
         public virtual BigInteger Amount { get; set; }
     }
@@ -284,7 +300,9 @@ namespace PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefi
         [Parameter("uint256", "epoch", 1)]
         public virtual BigInteger Epoch { get; set; }
         [Parameter("address", "user", 2)]
+#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
         public virtual string User { get; set; }
+#pragma warning restore CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 "required" 修饰符或声明为可为 null。
     }
 
     public partial class RenounceOwnershipFunction : RenounceOwnershipFunctionBase { }

@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using PancakeSwap.Application.Database.Config;
 using PancakeSwap.Application.Database.Entities;
 using PancakeSwap.Application.Database.Repository;
 using QYQ.Base.SqlSugar;
@@ -17,7 +19,7 @@ namespace PancakeSwap.Infrastructure.Database.Repository
     /// <param name="logger"></param>
     /// <param name="connectionString"></param>
     /// <param name="dbType"></param>
-    public class BetRepository(ILogger<BetRepository> logger, string connectionString, DbType dbType = DbType.Sqlite) : BaseRepository<BetEntity>(logger, connectionString, dbType), IBetRepository
+    public class BetRepository(ILogger<BetRepository> logger, IOptionsMonitor<DatabaseConfig> options, DbType dbType = DbType.Sqlite) : BaseRepository<BetEntity>(logger, options.CurrentValue.Default, dbType), IBetRepository
     {
 
     }
