@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace PancakeSwap.Infrastructure.Services
+namespace PancakeSwap.Infrastructure.HostedServices
 {
     /// <summary>
     /// 定时调用 PancakePrediction.executeRound() 的后台任务。
@@ -24,19 +24,17 @@ namespace PancakeSwap.Infrastructure.Services
 
         private readonly uint _intervalSeconds;    // 回合时长（300）
         private readonly TimeSpan _pollInterval;   // 每隔多久检查一次并调用
-        private readonly string _networkName;
-        private readonly bool _isDevelopment;
 
-        public ExecuteRoundWorker(IConfiguration cfg, ILogger<ExecuteRoundWorker> logger)
+        private readonly IHostEnvironment _hostEnvironment;
+
+        public ExecuteRoundWorker(IConfiguration configuration, ILogger<ExecuteRoundWorker> logger, IHostEnvironment hostEnvironment)
         {
             _logger = logger;
-
+            _hostEnvironment = hostEnvironment;
             // 读取环境变量
-            var rpc = cfg["BSC_RPC"] ?? "http://127.0.0.1:8545";
-            var pk = cfg["OPERATOR_PK"] ?? throw new("OPERATOR_PK 未配置");
-            var contract = cfg["PREDICTION_ADDRESS"] ?? throw new("PREDICTION_ADDRESS 未配置");
-            _networkName = cfg["ASPNETCORE_ENVIRONMENT"] ?? "Development";
-            _isDevelopment = string.Equals(_networkName, "Development", StringComparison.OrdinalIgnoreCase);
+            var rpc = configuration["BSC_RPC"] ?? "http://127.0.0.1:8545";
+            var pk = configuration["OPERATOR_PK"] ?? throw new("OPERATOR_PK 未配置");
+            var contract = configuration["PREDICTION_ADDRESS"] ?? throw new("PREDICTION_ADDRESS 未配置");
 
             // 创建签名账号
             var account = new Account(pk);
@@ -60,34 +58,32 @@ namespace PancakeSwap.Infrastructure.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("⏲️ ExecuteRoundWorker started on {Network}, interval {Poll}s",
-                _networkName, _pollInterval.TotalSeconds);
+            _logger.LogInformation("⏲️ ExecuteRoundWorker 已启动，当前网络 {Network}，轮询间隔 {Poll}s",
+                _hostEnvironment.EnvironmentName, _pollInterval.TotalSeconds);
 
             var executeFn = _contract.GetFunction("executeRound");
-            var lockFn = _contract.GetFunction("genesisLockRound");   // 仅本地链调试可用
+            var lockFn = _contract.GetFunction("genesisLockRound");
             var startFn = _contract.GetFunction("genesisStartRound");
             var startOnceFn = _contract.GetFunction("genesisStartOnce");
             var lockOnceFn = _contract.GetFunction("genesisLockOnce");
 
-            if (_isDevelopment)
+            if (_hostEnvironment.IsDevelopment())
             {
-                // 本地环境首次启动时需要调用 genesisStartRound 与 genesisLockRound
+                // ------ 创世两步，仅本地调试需要 ------
                 if (!await startOnceFn.CallAsync<bool>())
                 {
                     try
                     {
-                        var gas = await startFn.EstimateGasAsync().ConfigureAwait(false);
-                        var receipt = await startFn.SendTransactionAndWaitForReceiptAsync(
-                            from: _web3Tx.TransactionManager.Account.Address,
-                            gas: gas,
-                            value: new HexBigInteger(BigInteger.Zero));
+                        var gas = await startFn.EstimateGasAsync();
+                        var rc = await startFn.SendTransactionAndWaitForReceiptAsync(
+                                    _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
 
-                        _logger.LogInformation("✅ genesisStartRound tx {Hash} | block {Block}",
-                            receipt.TransactionHash, receipt.BlockNumber.Value);
+                        _logger.LogInformation("✅ 已调用 genesisStartRound，交易 {Hash} | 区块 {Block}",
+                            rc.TransactionHash, rc.BlockNumber.Value);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "genesisStartRound failed");
+                        _logger.LogWarning(ex, "genesisStartRound 调用失败");
                     }
                 }
 
@@ -95,41 +91,36 @@ namespace PancakeSwap.Infrastructure.Services
                 {
                     try
                     {
-                        var gas = await lockFn.EstimateGasAsync().ConfigureAwait(false);
-                        var receipt = await lockFn.SendTransactionAndWaitForReceiptAsync(
-                            from: _web3Tx.TransactionManager.Account.Address,
-                            gas: gas,
-                            value: new HexBigInteger(BigInteger.Zero));
+                        var gas = await lockFn.EstimateGasAsync();
+                        var rc = await lockFn.SendTransactionAndWaitForReceiptAsync(
+                                    _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
 
-                        _logger.LogInformation("✅ genesisLockRound tx {Hash} | block {Block}",
-                            receipt.TransactionHash, receipt.BlockNumber.Value);
+                        _logger.LogInformation("✅ 已调用 genesisLockRound，交易 {Hash} | 区块 {Block}",
+                            rc.TransactionHash, rc.BlockNumber.Value);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "genesisLockRound failed");
+                        _logger.LogWarning(ex, "genesisLockRound 调用失败");
                     }
                 }
             }
 
+            // ------ 周期性 executeRound ------
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    // 1️⃣ 发送交易
-                    var gas = await executeFn.EstimateGasAsync().ConfigureAwait(false);
-                    var tx = await executeFn.SendTransactionAndWaitForReceiptAsync(
-                                    from: _web3Tx.TransactionManager.Account.Address,
-                                    gas: gas,
-                                    value: new HexBigInteger(BigInteger.Zero));
+                    var gas = await executeFn.EstimateGasAsync();
+                    var rc = await executeFn.SendTransactionAndWaitForReceiptAsync(
+                                _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
 
-                    _logger.LogInformation("✅ executeRound tx {Hash} | block {Block}",
-                        tx.TransactionHash, tx.BlockNumber.Value);
-
+                    _logger.LogInformation("✅ executeRound 交易成功：{Hash} | 区块 {Block}",
+                        rc.TransactionHash, rc.BlockNumber.Value);
                 }
                 catch (Exception ex)
                 {
-                    // 常见 revert: Too early, Round not bettable, Not operator …
-                    _logger.LogWarning(ex, "executeRound failed");
+                    // 常见 revert: Too early / Not operator / Round not bettable…
+                    _logger.LogWarning(ex, "executeRound 调用失败");
                 }
 
                 try
@@ -139,5 +130,7 @@ namespace PancakeSwap.Infrastructure.Services
                 catch (OperationCanceledException) { break; }
             }
         }
+
+
     }
 }

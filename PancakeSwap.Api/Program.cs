@@ -7,6 +7,7 @@ using PancakeSwap.Api.HostedServices;
 using PancakeSwap.Api.Hubs;
 using Nethereum.Web3;
 using QYQ.Base.Common.IOCExtensions;
+using PancakeSwap.Infrastructure.HostedServices;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddQYQSerilog();
