@@ -10,6 +10,9 @@ using Nethereum.Web3;
 using PancakeSwap.Application.Services;
 using PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefinition;
 using PancakeSwap.Api.Hubs;
+using PancakeSwap.Infrastructure.Database;
+using PancakeSwap.Application.Database.Entities;
+using PancakeSwap.Application.Enums;
 
 namespace PancakeSwap.Api.HostedServices
 {
@@ -22,9 +25,16 @@ namespace PancakeSwap.Api.HostedServices
         private readonly IRoundService _roundService;
         private readonly ILogger<ChainEventListener> _logger;
         private readonly IHubContext<PredictionHub> _hubContext;
+        private readonly ApplicationDbContext _dbContext;
         private readonly string _contractAddress;
-        private Nethereum.Hex.HexTypes.HexBigInteger? _filterId;
-        private Nethereum.Contracts.Event<EndRoundEventDTO>? _event;
+        private HexBigInteger? _endRoundFilterId;
+        private Nethereum.Contracts.Event<EndRoundEventDTO>? _endRoundEvent;
+        private HexBigInteger? _betBullFilterId;
+        private Nethereum.Contracts.Event<BetBullEventDTO>? _betBullEvent;
+        private HexBigInteger? _betBearFilterId;
+        private Nethereum.Contracts.Event<BetBearEventDTO>? _betBearEvent;
+        private HexBigInteger? _claimFilterId;
+        private Nethereum.Contracts.Event<ClaimEventDTO>? _claimEvent;
 
         /// <summary>
         /// 初始化 <see cref="ChainEventListener"/> 实例。
@@ -38,11 +48,13 @@ namespace PancakeSwap.Api.HostedServices
             IConfiguration configuration,
             IWeb3 web3,
             IRoundService roundService,
+            ApplicationDbContext dbContext,
             ILogger<ChainEventListener> logger,
             IHubContext<PredictionHub> hubContext)
         {
             _web3 = web3;
             _roundService = roundService;
+            _dbContext = dbContext;
             _logger = logger;
             _hubContext = hubContext;
             _contractAddress = configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty;
@@ -57,19 +69,58 @@ namespace PancakeSwap.Api.HostedServices
                 return;
             }
 
-            _event = _web3.Eth.GetEvent<EndRoundEventDTO>(_contractAddress);
-            _filterId = await _event.CreateFilterAsync();
+            _endRoundEvent = _web3.Eth.GetEvent<EndRoundEventDTO>(_contractAddress);
+            _endRoundFilterId = await _endRoundEvent.CreateFilterAsync();
+
+            _betBullEvent = _web3.Eth.GetEvent<BetBullEventDTO>(_contractAddress);
+            _betBullFilterId = await _betBullEvent.CreateFilterAsync();
+
+            _betBearEvent = _web3.Eth.GetEvent<BetBearEventDTO>(_contractAddress);
+            _betBearFilterId = await _betBearEvent.CreateFilterAsync();
+
+            _claimEvent = _web3.Eth.GetEvent<ClaimEventDTO>(_contractAddress);
+            _claimFilterId = await _claimEvent.CreateFilterAsync();
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    var logs = await _event.GetFilterChangesAsync(_filterId);
-                    foreach (var log in logs)
+                    if (_endRoundEvent != null && _endRoundFilterId != null)
                     {
-                        var epoch = (long)log.Event.Epoch;
-                        await _roundService.SettleRoundAsync(epoch, stoppingToken);
-                        await _hubContext.Clients.All.SendAsync("roundEnded", new { id = epoch }, stoppingToken);
+                        var logs = await _endRoundEvent.GetFilterChangesAsync(_endRoundFilterId);
+                        foreach (var log in logs)
+                        {
+                            var epoch = (long)log.Event.Epoch;
+                            await _roundService.SettleRoundAsync(epoch, stoppingToken);
+                            await _hubContext.Clients.All.SendAsync("roundEnded", new { id = epoch }, stoppingToken);
+                        }
+                    }
+
+                    if (_betBullEvent != null && _betBullFilterId != null)
+                    {
+                        var logs = await _betBullEvent.GetFilterChangesAsync(_betBullFilterId);
+                        foreach (var log in logs)
+                        {
+                            await SaveBetAsync(log.Event.Sender, (long)log.Event.Epoch, log.Event.Amount, Position.Up);
+                        }
+                    }
+
+                    if (_betBearEvent != null && _betBearFilterId != null)
+                    {
+                        var logs = await _betBearEvent.GetFilterChangesAsync(_betBearFilterId);
+                        foreach (var log in logs)
+                        {
+                            await SaveBetAsync(log.Event.Sender, (long)log.Event.Epoch, log.Event.Amount, Position.Down);
+                        }
+                    }
+
+                    if (_claimEvent != null && _claimFilterId != null)
+                    {
+                        var logs = await _claimEvent.GetFilterChangesAsync(_claimFilterId);
+                        foreach (var log in logs)
+                        {
+                            await SaveClaimAsync(log.Event.Sender, (long)log.Event.Epoch, log.Event.Amount, log.Log.TransactionHash);
+                        }
                     }
                 }
                 catch (OperationCanceledException)
@@ -78,7 +129,7 @@ namespace PancakeSwap.Api.HostedServices
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing EndRound events");
+                    _logger.LogError(ex, "Error processing events");
                 }
 
                 try
@@ -95,19 +146,60 @@ namespace PancakeSwap.Api.HostedServices
         /// <inheritdoc />
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (_event != null && _filterId != null)
+            if (_endRoundFilterId != null)
             {
-                try
-                {
-                    await _web3.Eth.Filters.UninstallFilter.SendRequestAsync(_filterId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to uninstall EndRound filter");
-                }
+                await _web3.Eth.Filters.UninstallFilter.SendRequestAsync(_endRoundFilterId);
+            }
+
+            if (_betBullFilterId != null)
+            {
+                await _web3.Eth.Filters.UninstallFilter.SendRequestAsync(_betBullFilterId);
+            }
+
+            if (_betBearFilterId != null)
+            {
+                await _web3.Eth.Filters.UninstallFilter.SendRequestAsync(_betBearFilterId);
+            }
+
+            if (_claimFilterId != null)
+            {
+                await _web3.Eth.Filters.UninstallFilter.SendRequestAsync(_claimFilterId);
             }
 
             await base.StopAsync(cancellationToken);
+        }
+
+        private async Task SaveBetAsync(string user, long epoch, System.Numerics.BigInteger amountWei, Position position)
+        {
+            var amount = (decimal)amountWei / 1_000000000000000000m;
+            var bet = new BetEntity
+            {
+                Epoch = epoch,
+                UserAddress = user,
+                Amount = amount,
+                Position = position,
+                Claimed = false,
+                Reward = 0m
+            };
+            await _dbContext.Db.Insertable(bet).ExecuteCommandAsync();
+        }
+
+        private async Task SaveClaimAsync(string user, long epoch, System.Numerics.BigInteger rewardWei, string txHash)
+        {
+            var reward = (decimal)rewardWei / 1_000000000000000000m;
+            var claim = new ClaimEntity
+            {
+                Epoch = epoch,
+                UserAddress = user,
+                Reward = reward,
+                TxHash = txHash
+            };
+            await _dbContext.Db.Insertable(claim).ExecuteCommandAsync();
+
+            await _dbContext.Db.Updateable<BetEntity>()
+                .SetColumns(b => new BetEntity { Claimed = true, Reward = reward })
+                .Where(b => b.Epoch == epoch && b.UserAddress == user)
+                .ExecuteCommandAsync();
         }
     }
 }

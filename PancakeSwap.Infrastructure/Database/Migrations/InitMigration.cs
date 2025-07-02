@@ -17,6 +17,7 @@ namespace PancakeSwap.Infrastructure.Database.Migrations
             db.CodeFirst.InitTables<RoundEntity>();
             db.CodeFirst.InitTables<BetEntity>();
             db.CodeFirst.InitTables<PriceSnapshotEntity>();
+            db.CodeFirst.InitTables<ClaimEntity>();
         }
     }
 }
