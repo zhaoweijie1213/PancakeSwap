@@ -225,6 +225,11 @@ namespace PancakeSwap.Infrastructure.HostedServices
                     _logger.LogWarning("⌛ 太早，15 秒后重试");
                     await SleepOrFastForward(15, token);
                 }
+                catch (SmartContractRevertException ex) when (ex.RevertMessage.Contains("roundId must be larger than oracleLatestRoundId"))
+                {
+                    _logger.LogWarning("📈 预言机数据未更新，30 秒后重试");
+                    await SleepOrFastForward(30, token);
+                }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "executeRound 调用失败");
