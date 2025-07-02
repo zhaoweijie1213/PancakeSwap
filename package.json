@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "compile": "hardhat compile"
+    "compile": "hardhat compile",
+    "node": "hardhat node",         
+    "test": "hardhat test",           
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:bsctest": "hardhat run scripts/deploy.js --network bsctest"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
