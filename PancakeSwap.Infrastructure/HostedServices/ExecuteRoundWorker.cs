@@ -135,11 +135,20 @@ namespace PancakeSwap.Infrastructure.HostedServices
             var delta = basePrice * ((decimal)_random.NextDouble() * 0.02m - 0.01m);
             var priceValue = new BigInteger((long)Math.Floor((basePrice + delta) * 1_00000000m));
 
-            var gas = await updateFn.EstimateGasAsync(
-                _web3Tx.TransactionManager.Account.Address,
-                gas: null,
-                value: null,
-                functionInput: priceValue);
+            HexBigInteger gas;
+            try
+            {
+                gas = await updateFn.EstimateGasAsync(
+                    _web3Tx.TransactionManager.Account.Address,
+                    gas: null,
+                    value: null,
+                    functionInput: priceValue);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "预言机价格更新估算 gas 失败，使用默认值");
+                gas = new HexBigInteger(150_000);
+            }
 
             await updateFn.SendTransactionAndWaitForReceiptAsync(
                 _web3Tx.TransactionManager.Account.Address,
