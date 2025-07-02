@@ -28,6 +28,12 @@ namespace PancakeSwap.Infrastructure.HostedServices
 
         private readonly IHostEnvironment _hostEnvironment;
 
+        /// <summary>
+        /// 初始化后台任务实例。
+        /// </summary>
+        /// <param name="configuration">应用配置。</param>
+        /// <param name="logger">日志记录器。</param>
+        /// <param name="hostEnvironment">宿主环境信息。</param>
         public ExecuteRoundWorker(IConfiguration configuration, ILogger<ExecuteRoundWorker> logger, IHostEnvironment hostEnvironment)
         {
             _logger = logger;
@@ -58,6 +64,10 @@ namespace PancakeSwap.Infrastructure.HostedServices
             _pollInterval = TimeSpan.FromSeconds((_intervalSeconds + _bufferSeconds) / 2);
         }
 
+        /// <summary>
+        /// 后台任务主体，不断执行合约轮询与交易。
+        /// </summary>
+        /// <param name="stoppingToken">取消任务的标记。</param>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("⏲️ ExecuteRoundWorker 已启动，当前网络 {Network}，轮询间隔 {Poll}s",
@@ -91,21 +101,27 @@ namespace PancakeSwap.Infrastructure.HostedServices
 
                 if (!await lockOnceFn.CallAsync<bool>())
                 {
-                    try
-                    {
-                        _logger.LogInformation("等待 {Delay}s 后调用 genesisLockRound", _intervalSeconds);
-                        await Task.Delay(TimeSpan.FromSeconds(_intervalSeconds), stoppingToken);
+                    var delay = _intervalSeconds + _bufferSeconds / 2;
+                    _logger.LogInformation("等待 {Delay}s 后调用 genesisLockRound", delay);
+                    await Task.Delay(TimeSpan.FromSeconds(delay), stoppingToken);
 
-                        var gas = await lockFn.EstimateGasAsync();
-                        var rc = await lockFn.SendTransactionAndWaitForReceiptAsync(
-                                    _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
-
-                        _logger.LogInformation("✅ 已调用 genesisLockRound，交易 {Hash} | 区块 {Block}",
-                            rc.TransactionHash, rc.BlockNumber.Value);
-                    }
-                    catch (Exception ex)
+                    while (!stoppingToken.IsCancellationRequested)
                     {
-                        _logger.LogWarning(ex, "genesisLockRound 调用失败");
+                        try
+                        {
+                            var gas = await lockFn.EstimateGasAsync();
+                            var rc = await lockFn.SendTransactionAndWaitForReceiptAsync(
+                                        _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
+
+                            _logger.LogInformation("✅ 已调用 genesisLockRound，交易 {Hash} | 区块 {Block}",
+                                rc.TransactionHash, rc.BlockNumber.Value);
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "genesisLockRound 调用失败，{Retry}s 后重试", _bufferSeconds / 2);
+                            await Task.Delay(TimeSpan.FromSeconds(_bufferSeconds / 2), stoppingToken);
+                        }
                     }
                 }
             }
