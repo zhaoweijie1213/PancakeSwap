@@ -1,14 +1,15 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nethereum.ABI.FunctionEncoding;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Web3;
-using System;
-using System.Numerics;
 using Nethereum.Web3.Accounts;
+using System;
+using System.IO;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
 
 namespace PancakeSwap.Infrastructure.HostedServices
 {
@@ -70,61 +71,84 @@ namespace PancakeSwap.Infrastructure.HostedServices
         /// <param name="stoppingToken">取消任务的标记。</param>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("⏲️ ExecuteRoundWorker 已启动，当前网络 {Network}，轮询间隔 {Poll}s",
-                _hostEnvironment.EnvironmentName, _pollInterval.TotalSeconds);
+            if (!_hostEnvironment.IsDevelopment()) return;
 
+            _logger.LogInformation("⏲️ ExecuteRoundWorker 已启动，当前网络 {Network}，轮询间隔 {Poll}s",
+            _hostEnvironment.EnvironmentName, _pollInterval.TotalSeconds);
+            //准备常用 Function 句柄
+            var pausedFn = _contract.GetFunction("paused");
+            var pauseFn = _contract.GetFunction("pause");
+            var unpauseFn = _contract.GetFunction("unpause");
             var executeFn = _contract.GetFunction("executeRound");
             var lockFn = _contract.GetFunction("genesisLockRound");
             var startFn = _contract.GetFunction("genesisStartRound");
             var startOnceFn = _contract.GetFunction("genesisStartOnce");
             var lockOnceFn = _contract.GetFunction("genesisLockOnce");
 
-            if (_hostEnvironment.IsDevelopment())
+            // ---------- ⛑️ 自愈：若创世未完成则自动复位 ----------
+            if (!await startOnceFn.CallAsync<bool>() || !await lockOnceFn.CallAsync<bool>())
             {
-                // ------ 创世两步，仅本地调试需要 ------
-                if (!await startOnceFn.CallAsync<bool>())
+                // 1) 如未暂停，先 pause
+                if (!await pausedFn.CallAsync<bool>())
+                {
+                    _logger.LogWarning("检测到创世不完整，执行 pause() 复位…");
+                    await pauseFn.SendTransactionAndWaitForReceiptAsync(
+                        _web3Tx.TransactionManager.Account.Address, new HexBigInteger(350_000));
+
+                    _logger.LogInformation("✅ 合约已暂停");
+                }
+
+                // 2) 立即 unpause 以清空创世标志
+                await unpauseFn.SendTransactionAndWaitForReceiptAsync(
+                    _web3Tx.TransactionManager.Account.Address, new HexBigInteger(350_000));
+
+                _logger.LogInformation("✅ 合约已解除暂停，genesis 标志已复位");
+            }
+
+            //创世两步，仅本地调试需要
+            if (!await startOnceFn.CallAsync<bool>())
+            {
+                try
+                {
+                    var gas = await startFn.EstimateGasAsync();
+                    var rc = await startFn.SendTransactionAndWaitForReceiptAsync(
+                                _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
+
+                    _logger.LogInformation("✅ 已调用 genesisStartRound，交易 {Hash} | 区块 {Block}",
+                        rc.TransactionHash, rc.BlockNumber.Value);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "genesisStartRound 调用失败");
+                }
+            }
+
+            if (!await lockOnceFn.CallAsync<bool>())
+            {
+                var delay = _intervalSeconds + _bufferSeconds / 2;
+                _logger.LogInformation("等待 {Delay}s 后调用 genesisLockRound", delay);
+                await Task.Delay(TimeSpan.FromSeconds(delay), stoppingToken);
+
+                while (!stoppingToken.IsCancellationRequested)
                 {
                     try
                     {
-                        var gas = await startFn.EstimateGasAsync();
-                        var rc = await startFn.SendTransactionAndWaitForReceiptAsync(
+                        var gas = await lockFn.EstimateGasAsync();
+                        var rc = await lockFn.SendTransactionAndWaitForReceiptAsync(
                                     _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
 
-                        _logger.LogInformation("✅ 已调用 genesisStartRound，交易 {Hash} | 区块 {Block}",
+                        _logger.LogInformation("✅ 已调用 genesisLockRound，交易 {Hash} | 区块 {Block}",
                             rc.TransactionHash, rc.BlockNumber.Value);
+                        break;
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "genesisStartRound 调用失败");
-                    }
-                }
-
-                if (!await lockOnceFn.CallAsync<bool>())
-                {
-                    var delay = _intervalSeconds + _bufferSeconds / 2;
-                    _logger.LogInformation("等待 {Delay}s 后调用 genesisLockRound", delay);
-                    await Task.Delay(TimeSpan.FromSeconds(delay), stoppingToken);
-
-                    while (!stoppingToken.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            var gas = await lockFn.EstimateGasAsync();
-                            var rc = await lockFn.SendTransactionAndWaitForReceiptAsync(
-                                        _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
-
-                            _logger.LogInformation("✅ 已调用 genesisLockRound，交易 {Hash} | 区块 {Block}",
-                                rc.TransactionHash, rc.BlockNumber.Value);
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "genesisLockRound 调用失败，{Retry}s 后重试", _bufferSeconds / 2);
-                            await Task.Delay(TimeSpan.FromSeconds(_bufferSeconds / 2), stoppingToken);
-                        }
+                        _logger.LogWarning(ex, "genesisLockRound 调用失败，{Retry}s 后重试", _bufferSeconds / 2);
+                        await Task.Delay(TimeSpan.FromSeconds(_bufferSeconds / 2), stoppingToken);
                     }
                 }
             }
+
 
             // ------ 周期性 executeRound ------
             while (!stoppingToken.IsCancellationRequested)
@@ -138,6 +162,12 @@ namespace PancakeSwap.Infrastructure.HostedServices
                     _logger.LogInformation("✅ executeRound 交易成功：{Hash} | 区块 {Block}",
                         rc.TransactionHash, rc.BlockNumber.Value);
                 }
+                catch (SmartContractRevertException ex) when (ex.RevertMessage.Contains("Too early"))
+                {
+                    // 时间还差一点点 → 小睡 15 秒后再试
+                    _logger.LogWarning("⌛ 太早，15 秒后重试");
+                    await SleepOrFastForward(15, stoppingToken);
+                }
                 catch (Exception ex)
                 {
                     // 常见 revert: Too early / Not operator / Round not bettable…
@@ -149,6 +179,26 @@ namespace PancakeSwap.Infrastructure.HostedServices
                     await Task.Delay(_pollInterval, stoppingToken);
                 }
                 catch (OperationCanceledException) { break; }
+            }
+        }
+
+        /// <summary>
+        /// 新增：本地链快进工具
+        /// </summary>
+        /// <param name="seconds"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private async Task SleepOrFastForward(uint seconds, CancellationToken ct)
+        {
+            var chainId = (await _web3Tx.Net.Version.SendRequestAsync()).ToString();
+            if (chainId == "31337")           // Hardhat 本地链
+            {
+                await _web3Tx.Client.SendRequestAsync("evm_increaseTime", seconds);
+                await _web3Tx.Client.SendRequestAsync("evm_mine");
+            }
+            else
+            {
+                await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
             }
         }
 
