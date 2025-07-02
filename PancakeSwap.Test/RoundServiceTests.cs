@@ -7,7 +7,7 @@ using Moq;
 using PancakeSwap.Application.Enums;
 using PancakeSwap.Application.Services;
 using PancakeSwap.Infrastructure.Database;
-using PancakeSwap.Infrastructure.Database.Entities;
+using PancakeSwap.Application.Database.Entities;
 using PancakeSwap.Infrastructure.Database.Migrations;
 using PancakeSwap.Infrastructure.Services;
 using SqlSugar;
