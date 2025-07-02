@@ -60,7 +60,11 @@ namespace PancakeSwap.Api.HostedServices
             _contractAddress = configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 监听合约事件并处理相关逻辑。
+        /// </summary>
+        /// <param name="stoppingToken"></param>
+        /// <returns></returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             if (string.IsNullOrWhiteSpace(_contractAddress))
@@ -69,16 +73,21 @@ namespace PancakeSwap.Api.HostedServices
                 return;
             }
 
+            //回合结束事件
             _endRoundEvent = _web3.Eth.GetEvent<EndRoundEventDTO>(_contractAddress);
             _endRoundFilterId = await _endRoundEvent.CreateFilterAsync();
 
+            //多头下注事件
             _betBullEvent = _web3.Eth.GetEvent<BetBullEventDTO>(_contractAddress);
             _betBullFilterId = await _betBullEvent.CreateFilterAsync();
 
+            //下跌下注事件
             _betBearEvent = _web3.Eth.GetEvent<BetBearEventDTO>(_contractAddress);
             _betBearFilterId = await _betBearEvent.CreateFilterAsync();
 
+            //认领奖励事件
             _claimEvent = _web3.Eth.GetEvent<ClaimEventDTO>(_contractAddress);
+            // 创建认领奖励事件过滤器
             _claimFilterId = await _claimEvent.CreateFilterAsync();
 
             while (!stoppingToken.IsCancellationRequested)
