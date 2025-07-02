@@ -86,33 +86,81 @@ namespace PancakeSwap.Infrastructure.HostedServices
             var lockOnceFn = _contract.GetFunction("genesisLockOnce");
 
             // ---------- ⛑️ 自愈：若创世未完成则自动复位 ----------
+            await EnsureGenesisAsync(pausedFn, pauseFn, unpauseFn, startFn, lockFn, startOnceFn, lockOnceFn, stoppingToken);
+            await ExecuteRoundsAsync(executeFn, stoppingToken);
+        }
+
+        /// <summary>
+        /// 新增：本地链快进工具
+        /// </summary>
+        /// <param name="seconds"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private async Task SleepOrFastForward(uint seconds, CancellationToken ct)
+        {
+            var chainId = (await _web3Tx.Net.Version.SendRequestAsync()).ToString();
+            if (chainId == "31337")           // Hardhat 本地链
+            {
+                await _web3Tx.Client.SendRequestAsync<string>("evm_increaseTime", null, seconds);
+                await _web3Tx.Client.SendRequestAsync<string>("evm_mine");
+            }
+            else
+            {
+                await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
+            }
+        }
+
+        /// <summary>
+        /// 创世流程与自愈逻辑。
+        /// </summary>
+        /// <param name="pausedFn">合约 paused 状态查询函数。</param>
+        /// <param name="pauseFn">暂停函数。</param>
+        /// <param name="unpauseFn">解除暂停函数。</param>
+        /// <param name="startFn">genesisStartRound 函数。</param>
+        /// <param name="lockFn">genesisLockRound 函数。</param>
+        /// <param name="startOnceFn">genesisStartOnce 查询函数。</param>
+        /// <param name="lockOnceFn">genesisLockOnce 查询函数。</param>
+        /// <param name="token">取消标记。</param>
+        private async Task EnsureGenesisAsync(
+            Nethereum.Contracts.Function pausedFn,
+            Nethereum.Contracts.Function pauseFn,
+            Nethereum.Contracts.Function unpauseFn,
+            Nethereum.Contracts.Function startFn,
+            Nethereum.Contracts.Function lockFn,
+            Nethereum.Contracts.Function startOnceFn,
+            Nethereum.Contracts.Function lockOnceFn,
+            CancellationToken token)
+        {
             if (!await startOnceFn.CallAsync<bool>() || !await lockOnceFn.CallAsync<bool>())
             {
-                // 1) 如未暂停，先 pause
                 if (!await pausedFn.CallAsync<bool>())
                 {
                     _logger.LogWarning("检测到创世不完整，执行 pause() 复位…");
                     await pauseFn.SendTransactionAndWaitForReceiptAsync(
-                        _web3Tx.TransactionManager.Account.Address, new HexBigInteger(350_000));
+                        _web3Tx.TransactionManager.Account.Address,
+                        gas: new HexBigInteger(350_000),
+                        value: new HexBigInteger(BigInteger.Zero));
 
                     _logger.LogInformation("✅ 合约已暂停");
                 }
 
-                // 2) 立即 unpause 以清空创世标志
                 await unpauseFn.SendTransactionAndWaitForReceiptAsync(
-                    _web3Tx.TransactionManager.Account.Address, new HexBigInteger(350_000));
+                    _web3Tx.TransactionManager.Account.Address,
+                    gas: new HexBigInteger(350_000),
+                    value: new HexBigInteger(BigInteger.Zero));
 
                 _logger.LogInformation("✅ 合约已解除暂停，genesis 标志已复位");
             }
 
-            //创世两步，仅本地调试需要
             if (!await startOnceFn.CallAsync<bool>())
             {
                 try
                 {
                     var gas = await startFn.EstimateGasAsync();
                     var rc = await startFn.SendTransactionAndWaitForReceiptAsync(
-                                _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
+                        _web3Tx.TransactionManager.Account.Address,
+                        gas: gas,
+                        value: new HexBigInteger(BigInteger.Zero));
 
                     _logger.LogInformation("✅ 已调用 genesisStartRound，交易 {Hash} | 区块 {Block}",
                         rc.TransactionHash, rc.BlockNumber.Value);
@@ -127,15 +175,17 @@ namespace PancakeSwap.Infrastructure.HostedServices
             {
                 var delay = _intervalSeconds + _bufferSeconds / 2;
                 _logger.LogInformation("等待 {Delay}s 后调用 genesisLockRound", delay);
-                await Task.Delay(TimeSpan.FromSeconds(delay), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(delay), token);
 
-                while (!stoppingToken.IsCancellationRequested)
+                while (!token.IsCancellationRequested)
                 {
                     try
                     {
                         var gas = await lockFn.EstimateGasAsync();
                         var rc = await lockFn.SendTransactionAndWaitForReceiptAsync(
-                                    _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
+                            _web3Tx.TransactionManager.Account.Address,
+                            gas: gas,
+                            value: new HexBigInteger(BigInteger.Zero));
 
                         _logger.LogInformation("✅ 已调用 genesisLockRound，交易 {Hash} | 区块 {Block}",
                             rc.TransactionHash, rc.BlockNumber.Value);
@@ -144,61 +194,47 @@ namespace PancakeSwap.Infrastructure.HostedServices
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "genesisLockRound 调用失败，{Retry}s 后重试", _bufferSeconds / 2);
-                        await Task.Delay(TimeSpan.FromSeconds(_bufferSeconds / 2), stoppingToken);
+                        await Task.Delay(TimeSpan.FromSeconds(_bufferSeconds / 2), token);
                     }
                 }
             }
+        }
 
-
-            // ------ 周期性 executeRound ------
-            while (!stoppingToken.IsCancellationRequested)
+        /// <summary>
+        /// 周期性执行 executeRound。
+        /// </summary>
+        /// <param name="executeFn">executeRound 函数。</param>
+        /// <param name="token">取消标记。</param>
+        private async Task ExecuteRoundsAsync(Nethereum.Contracts.Function executeFn, CancellationToken token)
+        {
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
                     var gas = await executeFn.EstimateGasAsync();
                     var rc = await executeFn.SendTransactionAndWaitForReceiptAsync(
-                                _web3Tx.TransactionManager.Account.Address, gas, new HexBigInteger(BigInteger.Zero));
+                        _web3Tx.TransactionManager.Account.Address,
+                        gas: gas,
+                        value: new HexBigInteger(BigInteger.Zero));
 
                     _logger.LogInformation("✅ executeRound 交易成功：{Hash} | 区块 {Block}",
                         rc.TransactionHash, rc.BlockNumber.Value);
                 }
                 catch (SmartContractRevertException ex) when (ex.RevertMessage.Contains("Too early"))
                 {
-                    // 时间还差一点点 → 小睡 15 秒后再试
                     _logger.LogWarning("⌛ 太早，15 秒后重试");
-                    await SleepOrFastForward(15, stoppingToken);
+                    await SleepOrFastForward(15, token);
                 }
                 catch (Exception ex)
                 {
-                    // 常见 revert: Too early / Not operator / Round not bettable…
                     _logger.LogWarning(ex, "executeRound 调用失败");
                 }
 
                 try
                 {
-                    await Task.Delay(_pollInterval, stoppingToken);
+                    await Task.Delay(_pollInterval, token);
                 }
                 catch (OperationCanceledException) { break; }
-            }
-        }
-
-        /// <summary>
-        /// 新增：本地链快进工具
-        /// </summary>
-        /// <param name="seconds"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        private async Task SleepOrFastForward(uint seconds, CancellationToken ct)
-        {
-            var chainId = (await _web3Tx.Net.Version.SendRequestAsync()).ToString();
-            if (chainId == "31337")           // Hardhat 本地链
-            {
-                await _web3Tx.Client.SendRequestAsync("evm_increaseTime", seconds);
-                await _web3Tx.Client.SendRequestAsync("evm_mine");
-            }
-            else
-            {
-                await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
             }
         }
 
