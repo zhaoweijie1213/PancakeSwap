@@ -23,6 +23,9 @@ namespace PancakeSwap.Infrastructure.HostedServices
         private readonly IWeb3 _web3Tx;            // 带签名账户，用于发交易
         private readonly Nethereum.Contracts.Contract _contract;
 
+        private readonly Nethereum.Contracts.Contract? _mockOracle;
+        private readonly Random _random = new();
+
         private readonly uint _intervalSeconds;    // 回合时长（300）
         private readonly TimeSpan _pollInterval;   // 每隔多久检查一次并调用
         private readonly uint _bufferSeconds;      // 可执行时间缓冲区
@@ -43,6 +46,7 @@ namespace PancakeSwap.Infrastructure.HostedServices
             var rpc = configuration["BSC_RPC"] ?? "http://127.0.0.1:8545";
             var pk = configuration["OPERATOR_PK"] ?? throw new("OPERATOR_PK 未配置");
             var contract = configuration["PREDICTION_ADDRESS"] ?? throw new("PREDICTION_ADDRESS 未配置");
+            var mockOracle = configuration["MOCK_ORACLE_ADDR"];
 
             // 创建签名账号
             var account = new Account(pk);
@@ -56,6 +60,12 @@ namespace PancakeSwap.Infrastructure.HostedServices
             using var reader = new StreamReader(stream);
             var abi = reader.ReadToEnd();
             _contract = _web3Tx.Eth.GetContract(abi, contract);
+
+            if (!string.IsNullOrWhiteSpace(mockOracle))
+            {
+                const string updateAbi = "[{\"inputs\":[{\"internalType\":\"int256\",\"name\":\"newPrice\",\"type\":\"int256\"}],\"name\":\"updateAnswer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]";
+                _mockOracle = _web3Tx.Eth.GetContract(updateAbi, mockOracle);
+            }
 
             // 读取 intervalSeconds 与 bufferSeconds（一次即可）
             _intervalSeconds = _contract.GetFunction("intervalSeconds").CallAsync<uint>().Result;
@@ -108,6 +118,22 @@ namespace PancakeSwap.Infrastructure.HostedServices
             {
                 await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
             }
+        }
+
+        private async Task UpdateMockPriceAsync(CancellationToken ct)
+        {
+            if (_mockOracle == null) return;
+
+            var updateFn = _mockOracle.GetFunction("updateAnswer");
+            var basePrice = 300m;
+            var delta = basePrice * ((decimal)_random.NextDouble() * 0.02m - 0.01m);
+            var price = (decimal)Math.Floor((basePrice + delta) * 1_00000000m);
+            var gas = await updateFn.EstimateGasAsync(price);
+            await updateFn.SendTransactionAndWaitForReceiptAsync(
+                _web3Tx.TransactionManager.Account.Address,
+                gas: gas,
+                value: new HexBigInteger(BigInteger.Zero),
+                functionInput: price);
         }
 
         /// <summary>
@@ -181,6 +207,7 @@ namespace PancakeSwap.Infrastructure.HostedServices
                 {
                     try
                     {
+                        await UpdateMockPriceAsync(token);
                         var gas = await lockFn.EstimateGasAsync();
                         var rc = await lockFn.SendTransactionAndWaitForReceiptAsync(
                             _web3Tx.TransactionManager.Account.Address,
@@ -211,6 +238,7 @@ namespace PancakeSwap.Infrastructure.HostedServices
             {
                 try
                 {
+                    await UpdateMockPriceAsync(token);
                     var gas = await executeFn.EstimateGasAsync();
                     var rc = await executeFn.SendTransactionAndWaitForReceiptAsync(
                         _web3Tx.TransactionManager.Account.Address,
@@ -228,6 +256,7 @@ namespace PancakeSwap.Infrastructure.HostedServices
                 catch (SmartContractRevertException ex) when (ex.RevertMessage.Contains("roundId must be larger than oracleLatestRoundId"))
                 {
                     _logger.LogWarning("📈 预言机数据未更新，30 秒后重试");
+                    await UpdateMockPriceAsync(token);
                     await SleepOrFastForward(30, token);
                 }
                 catch (Exception ex)
