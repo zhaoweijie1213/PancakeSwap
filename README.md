@@ -15,9 +15,21 @@ npm install
 ```
 
 环境变量：
+- `LOCAL_RPC`：本地 Hardhat RPC 地址
+- `LOCAL_MNEMONIC`：本地链助记词
+- `LOCAL_PK`：本地链私钥
 - `BSC_TESTNET_RPC`：BSC 测试网 RPC 地址
-- `BSC_RPC`：后台监听事件的 BSC RPC 地址
 - `PRIVATE_KEY`：部署或测试用私钥
+- `ORACLE_TEST`：测试网预言机合约地址
+- `ORACLE_MAIN`：主网预言机合约地址
+- `ADMIN`：合约超级管理员地址
+- `OPERATOR`：负责执行的运营者地址
+- `BSC_RPC`：后台监听事件的 BSC RPC 地址
+- `OPERATOR_PK`：运营者私钥
+- `CONTRACT_ADDR_LOCAL`：本地部署的合约地址
+- `MOCK_ORACLE_ADDR`：本地 Mock 预言机地址
+- `INTERVAL_SECONDS`：回合时间间隔
+- `BUFFER_SECONDS`：执行缓冲区时间
 - `PG_CONNECTION`：PostgreSQL 连接字符串
 
 ## 架构概览
