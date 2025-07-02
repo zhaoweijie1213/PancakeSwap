@@ -3,11 +3,10 @@ bin
 obj
 
 # Node
-node_modules/
-artifacts/
-cache/
-typechain/
-typechain-types/
-.env
+node_modules
+artifacts
+cache
+typechain
+typechain-types
 dotnet-install.sh
 logs
