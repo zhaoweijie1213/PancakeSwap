@@ -131,8 +131,8 @@ namespace PancakeSwap.Infrastructure.Services
             {
                 Epoch = round.Id,
                 SecondsRemaining = secondsRemaining,
-                BullAmount = round.UpAmount,
-                BearAmount = round.DownAmount
+                BullAmount = round.BullAmount,
+                BearAmount = round.BearAmount
             };
         }
 
@@ -154,16 +154,16 @@ namespace PancakeSwap.Infrastructure.Services
             foreach (var r in rounds)
             {
                 var total = r.TotalAmount;
-                var oddsUp = r.UpAmount > 0 ? total / r.UpAmount : 0m;
-                var oddsDown = r.DownAmount > 0 ? total / r.DownAmount : 0m;
+                var oddsUp = r.BullAmount > 0 ? total / r.BullAmount : 0m;
+                var oddsDown = r.BearAmount > 0 ? total / r.BearAmount : 0m;
                 list.Add(new HistoryRoundOutput
                 {
                     Id = r.Id,
                     LockPrice = r.LockPrice,
                     ClosePrice = r.ClosePrice,
                     TotalAmount = total,
-                    UpAmount = r.UpAmount,
-                    DownAmount = r.DownAmount,
+                    BullAmount = r.BullAmount,
+                    BearAmount = r.BearAmount,
                     RewardAmount = total,
                     EndTime = new DateTimeOffset(r.CloseTime).ToUnixTimeSeconds(),
                     Status = RoundStatus.Ended.ToString().ToLowerInvariant(),

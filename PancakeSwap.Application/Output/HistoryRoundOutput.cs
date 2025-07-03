@@ -30,12 +30,12 @@ namespace PancakeSwap.Application.Output
         /// <summary>
         /// 押"上升"的总金额。
         /// </summary>
-        public decimal UpAmount { get; set; }
+        public decimal BullAmount { get; set; }
 
         /// <summary>
         /// 押"下降"的总金额。
         /// </summary>
-        public decimal DownAmount { get; set; }
+        public decimal BearAmount { get; set; }
 
         /// <summary>
         /// 可分配奖金池。

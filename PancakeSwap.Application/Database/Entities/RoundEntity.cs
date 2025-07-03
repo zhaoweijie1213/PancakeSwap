@@ -41,16 +41,22 @@ namespace PancakeSwap.Application.Database.Entities
         public decimal LockPrice { get; set; }
 
         /// <summary>
+        /// 锁定的预言机 ID。
+        /// </summary>
+        [SugarColumn(ColumnName = "lock_oracle_id")]
+        public long LockOracleId { get; set; }
+
+        /// <summary>
+        /// 预言机 ID，用于获取结束价格。
+        /// </summary>
+        [SugarColumn(ColumnName = "close_oracle_id")]
+        public long CloseOracleId { get; set; }
+
+        /// <summary>
         /// 结束价格。
         /// </summary>
         [SugarColumn(ColumnName = "close_price", ColumnDataType = "decimal(18,8)")]
         public decimal ClosePrice { get; set; }
-
-        /// <summary>
-        /// 当前价格。
-        /// </summary>
-        [SugarColumn(ColumnName = "current_price", ColumnDataType = "decimal(18,8)")]
-        public decimal CurrentPrice { get; set; }
 
         /// <summary>
         /// 回合状态。
@@ -67,14 +73,26 @@ namespace PancakeSwap.Application.Database.Entities
         /// <summary>
         /// 押涨总金额。
         /// </summary>
-        [SugarColumn(ColumnName = "up_amount", ColumnDataType = "decimal(18,8)")]
-        public decimal UpAmount { get; set; }
+        [SugarColumn(ColumnName = "bull_amount", ColumnDataType = "decimal(18,8)")]
+        public decimal BullAmount { get; set; }
 
         /// <summary>
         /// 押跌总金额。
         /// </summary>
-        [SugarColumn(ColumnName = "down_amount", ColumnDataType = "decimal(18,8)")]
-        public decimal DownAmount { get; set; }
+        [SugarColumn(ColumnName = "bear_amount", ColumnDataType = "decimal(18,8)")]
+        public decimal BearAmount { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [SugarColumn(ColumnName = "winner_side", ColumnDataType = "decimal(18,8)")]
+        public decimal WinnerSide { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [SugarColumn(ColumnName = "reward_base_cal_amount", ColumnDataType = "decimal(18,8)")]
+        public decimal RewardBaseCalAmount { get; set; }
 
         /// <summary>
         /// 可分配奖金池。
