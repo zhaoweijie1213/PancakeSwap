@@ -15,6 +15,7 @@ using PancakeSwap.Infrastructure.Database;
 using PancakeSwap.Application.Database.Entities;
 using PancakeSwap.Application.Enums;
 using Nethereum.Contracts;
+using Nethereum.RPC.Eth.DTOs;
 
 namespace PancakeSwap.Api.HostedServices
 {
@@ -116,26 +117,29 @@ namespace PancakeSwap.Api.HostedServices
                 return;
             }
 
+
+            var earliest = BlockParameter.CreateEarliest();
+
             //回合结束事件
             _endRoundEvent = _web3.Eth.GetEvent<EndRoundEventDTO>(_contractAddress);
-            _endRoundFilterId = await _endRoundEvent.CreateFilterAsync();
+            _endRoundFilterId = await _endRoundEvent.CreateFilterAsync(earliest);
 
             //多头下注事件
             _betBullEvent = _web3.Eth.GetEvent<BetBullEventDTO>(_contractAddress);
-            _betBullFilterId = await _betBullEvent.CreateFilterAsync();
+            _betBullFilterId = await _betBullEvent.CreateFilterAsync(earliest);
 
             //下跌下注事件
             _betBearEvent = _web3.Eth.GetEvent<BetBearEventDTO>(_contractAddress);
-            _betBearFilterId = await _betBearEvent.CreateFilterAsync();
+            _betBearFilterId = await _betBearEvent.CreateFilterAsync(earliest);
 
             //锁仓事件
             _lockRoundEvent = _web3.Eth.GetEvent<LockRoundEventDTO>(_contractAddress);
-            _lockRoundFilterId = await _lockRoundEvent.CreateFilterAsync();
+            _lockRoundFilterId = await _lockRoundEvent.CreateFilterAsync(earliest);
 
             //认领奖励事件
             _claimEvent = _web3.Eth.GetEvent<ClaimEventDTO>(_contractAddress);
             // 创建认领奖励事件过滤器
-            _claimFilterId = await _claimEvent.CreateFilterAsync();
+            _claimFilterId = await _claimEvent.CreateFilterAsync(earliest);
 
             while (!stoppingToken.IsCancellationRequested)
             {
