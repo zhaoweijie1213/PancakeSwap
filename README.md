@@ -27,6 +27,7 @@ npm install
 - `OPERATOR`：负责执行的运营者地址
 - `BSC_RPC`：后台监听事件的 BSC RPC 地址
 - `OPERATOR_PK`：运营者私钥
+- `PREDICTION_ADDRESS`：Prediction 合约地址（优先使用）
 - `CONTRACT_ADDR_LOCAL`：本地部署的合约地址
 - `MOCK_ORACLE_ADDR`：本地 Mock 预言机地址
 - `INTERVAL_SECONDS`：回合时间间隔

@@ -47,7 +47,10 @@ namespace PancakeSwap.Infrastructure.HostedServices
             // 读取环境变量
             var rpc = configuration["BSC_RPC"] ?? "http://127.0.0.1:8545";
             var pk = configuration["OPERATOR_PK"] ?? throw new("OPERATOR_PK 未配置");
-            var contract = configuration["PREDICTION_ADDRESS"] ?? throw new("PREDICTION_ADDRESS 未配置");
+            var contract = configuration["PREDICTION_ADDRESS"]
+                           ?? configuration["CONTRACT_ADDR_LOCAL"]
+                           ?? throw new("PREDICTION_ADDRESS 未配置");
+            contract = contract.Trim();
             var mockOracle = configuration["MOCK_ORACLE_ADDR"];
 
             // 创建签名账号
