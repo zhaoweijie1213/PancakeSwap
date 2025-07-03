@@ -24,9 +24,9 @@ namespace PancakeSwap.Api.Controllers
         /// 获取历史回合信息。
         /// </summary>
         [HttpGet("history")]
-        public async Task<ApiResult<IList<HistoryRoundOutput>>> HistoryAsync(CancellationToken ct)
+        public async Task<ApiResult<IList<HistoryRoundOutput>>> HistoryAsync()
         {
-            var data = await _roundService.GetHistoryAsync(3, ct);
+            var data = await _roundService.GetHistoryAsync(3);
             var result = new ApiResult<IList<HistoryRoundOutput>>();
             result.SetRsult(ApiResultCode.Success, data);
             return result;
@@ -36,9 +36,9 @@ namespace PancakeSwap.Api.Controllers
         /// 获取即将开始的回合列表。
         /// </summary>
         [HttpGet("upcoming")]
-        public async Task<ApiResult<IList<UpcomingRoundOutput>>> UpcomingAsync(CancellationToken ct)
+        public async Task<ApiResult<IList<UpcomingRoundOutput>>> UpcomingAsync()
         {
-            var data = await _roundService.GetUpcomingAsync(2, ct);
+            var data = await _roundService.GetUpcomingAsync(2);
             var result = new ApiResult<IList<UpcomingRoundOutput>>();
             result.SetRsult(ApiResultCode.Success, data);
             return result;

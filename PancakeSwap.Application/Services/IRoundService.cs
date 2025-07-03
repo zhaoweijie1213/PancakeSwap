@@ -12,48 +12,41 @@ namespace PancakeSwap.Application.Services
         /// <summary>
         /// 创建下一回合并返回其 Epoch。
         /// </summary>
-        /// <param name="ct">取消标记。</param>
         /// <returns>新回合的 Epoch。</returns>
-        Task<long> CreateNextRoundAsync(CancellationToken ct);
+        Task<long> CreateNextRoundAsync();
 
         /// <summary>
         /// 锁定指定回合并写入锁仓价。
         /// </summary>
         /// <param name="epoch">回合编号。</param>
-        /// <param name="ct">取消标记。</param>
-        Task LockRoundAsync(long epoch, CancellationToken ct);
+        Task LockRoundAsync(long epoch);
 
         /// <summary>
         /// 结算指定回合并写入收盘价与状态。
         /// </summary>
         /// <param name="epoch">回合编号。</param>
-        /// <param name="ct">取消标记。</param>
-        Task SettleRoundAsync(long epoch, CancellationToken ct);
+        Task SettleRoundAsync(long epoch);
 
         /// <summary>
         /// 获取当前回合信息。
         /// </summary>
-        /// <param name="ct">取消标记。</param>
-        Task<Output.CurrentRoundOutput?> GetCurrentRoundAsync(CancellationToken ct);
+        Task<Output.CurrentRoundOutput?> GetCurrentRoundAsync();
 
         /// <summary>
         /// 获取最近结束的回合记录。
         /// </summary>
         /// <param name="count">需要的回合数量。</param>
-        /// <param name="ct">取消标记。</param>
-        Task<List<Output.HistoryRoundOutput>> GetHistoryAsync(int count, CancellationToken ct);
+        Task<List<Output.HistoryRoundOutput>> GetHistoryAsync(int count);
 
         /// <summary>
         /// 获取即将开始的回合列表。
         /// </summary>
         /// <param name="count">需要的回合数量。</param>
-        /// <param name="ct">取消标记。</param>
-        Task<List<Output.UpcomingRoundOutput>> GetUpcomingAsync(int count, CancellationToken ct);
+        Task<List<Output.UpcomingRoundOutput>> GetUpcomingAsync(int count);
 
         /// <summary>
         /// 获取图表数据。
         /// </summary>
-        /// <param name="ct">取消标记。</param>
-        Task<Output.ChartDataOutput> GetChartDataAsync(CancellationToken ct);
+        Task<Output.ChartDataOutput> GetChartDataAsync();
     }
 }

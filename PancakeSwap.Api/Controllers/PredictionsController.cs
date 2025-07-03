@@ -31,9 +31,9 @@ namespace PancakeSwap.Api.Controllers
         /// </summary>
         /// <param name="ct">取消标记。</param>
         [HttpGet("current")]
-        public async Task<ApiResult<CurrentRoundOutput?>> GetCurrentAsync(CancellationToken ct)
+        public async Task<ApiResult<CurrentRoundOutput?>> GetCurrentAsync()
         {
-            var data = await _roundService.GetCurrentRoundAsync(ct);
+            var data = await _roundService.GetCurrentRoundAsync();
             var result = new ApiResult<CurrentRoundOutput?>();
             result.SetRsult(ApiResultCode.Success, data);
             return result;
@@ -42,10 +42,9 @@ namespace PancakeSwap.Api.Controllers
         /// <summary>
         /// 提交下注请求。
         /// </summary>
-        /// <param name="epoch">回合编号。</param>
         /// <param name="input">下注参数。</param>
         [HttpPost("{epoch}/bet")]
-        public ApiResult<object> Bet(long epoch, [FromBody] BetInput input)
+        public ApiResult<object> Bet([FromBody] BetInput input)
         {
             // TODO: 实现下注逻辑
             var result = new ApiResult<object>();

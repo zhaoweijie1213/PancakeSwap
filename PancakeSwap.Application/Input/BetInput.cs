@@ -8,7 +8,12 @@ namespace PancakeSwap.Application.Input
     public class BetInput
     {
         /// <summary>
-        /// 下注金额，单位为 BNB。
+        /// 回合编号
+        /// </summary>
+        public long Epoch { get; set; }
+
+        /// <summary>
+        /// 下注金额，单位为 Ton。
         /// </summary>
         [Required]
         public decimal Amount { get; set; }

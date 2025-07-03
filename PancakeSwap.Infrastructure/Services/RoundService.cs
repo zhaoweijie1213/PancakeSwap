@@ -31,7 +31,7 @@ namespace PancakeSwap.Infrastructure.Services
         }
 
         /// <inheritdoc />
-        public async Task<long> CreateNextRoundAsync(CancellationToken ct)
+        public async Task<long> CreateNextRoundAsync()
         {
             var last = await _context.Db.Queryable<RoundEntity>()
                 .OrderBy(r => r.Id, OrderByType.Desc)
@@ -53,12 +53,11 @@ namespace PancakeSwap.Infrastructure.Services
         /// 锁定指定回合并写入锁仓价和时间。
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public async Task LockRoundAsync(long id, CancellationToken ct)
+        public async Task LockRoundAsync(long id)
         {
-            var price = await _priceFeed.GetLatestPriceAsync(ct);
+            var price = await _priceFeed.GetLatestPriceAsync(CancellationToken.None);
             if (price == null)
             {
                 throw new InvalidOperationException("Price unavailable");
@@ -79,12 +78,11 @@ namespace PancakeSwap.Infrastructure.Services
         /// 写入回合结算信息，包括收盘价和状态。
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="ct"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public async Task SettleRoundAsync(long id, CancellationToken ct)
+        public async Task SettleRoundAsync(long id)
         {
-            var closePrice = await _priceFeed.GetLatestPriceAsync(ct);
+            var closePrice = await _priceFeed.GetLatestPriceAsync(CancellationToken.None);
             if (closePrice == null)
             {
                 throw new InvalidOperationException("Price unavailable");
@@ -113,7 +111,7 @@ namespace PancakeSwap.Infrastructure.Services
         /// </summary>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<CurrentRoundOutput?> GetCurrentRoundAsync(CancellationToken ct)
+        public async Task<CurrentRoundOutput?> GetCurrentRoundAsync()
         {
             var now = DateTime.UtcNow;
             var round = await _context.Db.Queryable<RoundEntity>()
@@ -140,9 +138,8 @@ namespace PancakeSwap.Infrastructure.Services
         /// 获取历史回合记录。
         /// </summary>
         /// <param name="count"></param>
-        /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<List<HistoryRoundOutput>> GetHistoryAsync(int count, CancellationToken ct)
+        public async Task<List<HistoryRoundOutput>> GetHistoryAsync(int count)
         {
             var rounds = await _context.Db.Queryable<RoundEntity>()
                 .Where(r => r.Status == RoundStatus.Ended)
@@ -179,9 +176,8 @@ namespace PancakeSwap.Infrastructure.Services
         /// 获取即将开始的回合列表。
         /// </summary>
         /// <param name="count"></param>
-        /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<List<UpcomingRoundOutput>> GetUpcomingAsync(int count, CancellationToken ct)
+        public async Task<List<UpcomingRoundOutput>> GetUpcomingAsync(int count)
         {
             var now = DateTime.UtcNow;
             var rounds = await _context.Db.Queryable<RoundEntity>()
@@ -209,7 +205,7 @@ namespace PancakeSwap.Infrastructure.Services
         /// </summary>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<ChartDataOutput> GetChartDataAsync(CancellationToken ct)
+        public async Task<ChartDataOutput> GetChartDataAsync()
         {
             var since = DateTime.UtcNow.AddMinutes(-10);
             var rounds = await _context.Db.Queryable<RoundEntity>()
