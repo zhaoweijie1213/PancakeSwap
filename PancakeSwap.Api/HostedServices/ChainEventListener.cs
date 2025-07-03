@@ -13,6 +13,7 @@ using PancakeSwap.Api.Hubs;
 using PancakeSwap.Infrastructure.Database;
 using PancakeSwap.Application.Database.Entities;
 using PancakeSwap.Application.Enums;
+using Nethereum.Contracts;
 
 namespace PancakeSwap.Api.HostedServices
 {
@@ -42,14 +43,46 @@ namespace PancakeSwap.Api.HostedServices
         private readonly IHubContext<PredictionHub> _hubContext = hubContext;
         private readonly ApplicationDbContext _dbContext = dbContext;
         private readonly string _contractAddress = configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty;
+
+        /// <summary>
+        /// 回合结束事件过滤器 ID。
+        /// </summary>
         private HexBigInteger? _endRoundFilterId;
-        private Nethereum.Contracts.Event<EndRoundEventDTO>? _endRoundEvent;
+
+        /// <summary>
+        /// 回合结束事件定义。
+        /// </summary>
+        private Event<EndRoundEventDTO>? _endRoundEvent;
+
+        /// <summary>
+        /// 多头下注事件过滤器 ID。
+        /// </summary>
         private HexBigInteger? _betBullFilterId;
-        private Nethereum.Contracts.Event<BetBullEventDTO>? _betBullEvent;
+
+        /// <summary>
+        /// 多头下注事件定义。
+        /// </summary>
+        private Event<BetBullEventDTO>? _betBullEvent;
+
+        /// <summary>
+        /// 下跌下注事件过滤器 ID。
+        /// </summary>
         private HexBigInteger? _betBearFilterId;
-        private Nethereum.Contracts.Event<BetBearEventDTO>? _betBearEvent;
+
+        /// <summary>
+        /// 下跌下注事件定义。
+        /// </summary>
+        private Event<BetBearEventDTO>? _betBearEvent;
+
+        /// <summary>
+        /// 领奖事件过滤器 ID。
+        /// </summary>
         private HexBigInteger? _claimFilterId;
-        private Nethereum.Contracts.Event<ClaimEventDTO>? _claimEvent;
+
+        /// <summary>
+        /// 领奖事件定义。
+        /// </summary>
+        private Event<ClaimEventDTO>? _claimEvent;
 
         /// <summary>
         /// 监听合约事件并处理相关逻辑。
@@ -85,6 +118,7 @@ namespace PancakeSwap.Api.HostedServices
             {
                 try
                 {
+                    //回合结束入库
                     if (_endRoundEvent != null && _endRoundFilterId != null)
                     {
                         var logs = await _endRoundEvent.GetFilterChangesAsync(_endRoundFilterId);
@@ -96,6 +130,7 @@ namespace PancakeSwap.Api.HostedServices
                         }
                     }
 
+                    //多头下注入库
                     if (_betBullEvent != null && _betBullFilterId != null)
                     {
                         var logs = await _betBullEvent.GetFilterChangesAsync(_betBullFilterId);
@@ -105,6 +140,7 @@ namespace PancakeSwap.Api.HostedServices
                         }
                     }
 
+                    //下跌下注事件入库
                     if (_betBearEvent != null && _betBearFilterId != null)
                     {
                         var logs = await _betBearEvent.GetFilterChangesAsync(_betBearFilterId);
@@ -114,6 +150,7 @@ namespace PancakeSwap.Api.HostedServices
                         }
                     }
 
+                    //领奖事件入库
                     if (_claimEvent != null && _claimFilterId != null)
                     {
                         var logs = await _claimEvent.GetFilterChangesAsync(_claimFilterId);
