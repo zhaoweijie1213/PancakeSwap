@@ -5,6 +5,8 @@ using Nethereum.ABI.FunctionEncoding;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
+using Nethereum.RPC.Eth.DTOs;
+using PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefinition;
 using System;
 using System.IO;
 using System.Numerics;
@@ -83,8 +85,8 @@ namespace PancakeSwap.Infrastructure.HostedServices
         {
             if (!_hostEnvironment.IsDevelopment()) return;
 
-            _logger.LogInformation("⏲️ ExecuteRoundWorker 已启动，当前网络 {Network}，轮询间隔 {Poll}s",
-            _hostEnvironment.EnvironmentName, _pollInterval.TotalSeconds);
+            _logger.LogInformation("⏲️ ExecuteRoundWorker 已启动，当前网络 {Network}",
+                _hostEnvironment.EnvironmentName);
             //准备常用 Function 句柄
             var pausedFn = _contract.GetFunction("paused");
             var pauseFn = _contract.GetFunction("pause");
@@ -155,6 +157,27 @@ namespace PancakeSwap.Infrastructure.HostedServices
                 gas: gas,
                 value: new HexBigInteger(BigInteger.Zero),
                 functionInput: priceValue);
+        }
+
+        /// <summary>
+        /// 计算距离下一次 executeRound 可以调用的秒数。
+        /// </summary>
+        /// <param name="epochFn">currentEpoch 查询函数。</param>
+        /// <param name="roundsFn">rounds 查询函数。</param>
+        /// <returns>需要等待的秒数。</returns>
+        private async Task<uint> CalculateWaitSecondsAsync(
+            Nethereum.Contracts.Function epochFn,
+            Nethereum.Contracts.Function roundsFn)
+        {
+            var epoch = await epochFn.CallAsync<BigInteger>();
+            var round = await roundsFn
+                .CallDeserializingToObjectAsync<RoundsOutputDTO>(epoch);
+            var block = await _web3Tx.Eth.Blocks
+                .GetBlockWithTransactionsByNumber
+                .SendRequestAsync(BlockParameter.CreateLatest());
+            var now = (ulong)block.Timestamp.Value;
+            var target = (ulong)round.LockTimestamp + _bufferSeconds / 2;
+            return target <= now ? 1u : (uint)(target - now);
         }
 
         /// <summary>
@@ -245,6 +268,9 @@ namespace PancakeSwap.Infrastructure.HostedServices
                         await Task.Delay(TimeSpan.FromSeconds(_bufferSeconds / 2), token);
                     }
                 }
+
+                // 新回合已开始，等待至可执行时间
+                await SleepOrFastForward(_intervalSeconds + _bufferSeconds / 2, token);
             }
         }
 
@@ -255,6 +281,9 @@ namespace PancakeSwap.Infrastructure.HostedServices
         /// <param name="token">取消标记。</param>
         private async Task ExecuteRoundsAsync(Nethereum.Contracts.Function executeFn, CancellationToken token)
         {
+            var currentEpochFn = _contract.GetFunction("currentEpoch");
+            var roundsFn = _contract.GetFunction("rounds");
+
             while (!token.IsCancellationRequested)
             {
                 try
@@ -285,11 +314,25 @@ namespace PancakeSwap.Infrastructure.HostedServices
                     _logger.LogWarning(ex, "executeRound 调用失败");
                 }
 
+                uint delay;
                 try
                 {
-                    await Task.Delay(_pollInterval, token);
+                    delay = await CalculateWaitSecondsAsync(currentEpochFn, roundsFn);
                 }
-                catch (OperationCanceledException) { break; }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "⏱ 计算等待时间失败，使用默认间隔 {Poll}s", _pollInterval.TotalSeconds);
+                    delay = (uint)_pollInterval.TotalSeconds;
+                }
+
+                try
+                {
+                    await SleepOrFastForward(delay, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
         }
 
