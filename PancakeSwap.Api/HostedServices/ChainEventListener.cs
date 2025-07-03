@@ -43,12 +43,15 @@ namespace PancakeSwap.Api.HostedServices
         private readonly ILogger<ChainEventListener> _logger = logger;
         private readonly IHubContext<PredictionHub> _hubContext = hubContext;
         private readonly ApplicationDbContext _dbContext = dbContext;
-        private readonly string _contractAddress = configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty;
+        private readonly string _contractAddress =
+            (configuration["PREDICTION_ADDRESS"] ?? configuration["CONTRACT_ADDR_LOCAL"] ?? string.Empty).Trim();
 
         /// <summary>
         /// PancakePredictionV2 合约服务实例。
         /// </summary>
-        private readonly PancakePredictionV2Service _predictionService = new(web3, configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty);
+        private readonly PancakePredictionV2Service _predictionService =
+            new(web3,
+                (configuration["PREDICTION_ADDRESS"] ?? configuration["CONTRACT_ADDR_LOCAL"] ?? string.Empty).Trim());
 
         /// <summary>
         /// 回合结束事件过滤器 ID。
