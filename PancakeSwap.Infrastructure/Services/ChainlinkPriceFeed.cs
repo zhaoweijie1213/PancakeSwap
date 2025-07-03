@@ -24,7 +24,12 @@ namespace PancakeSwap.Infrastructure.Services
         public ChainlinkPriceFeed(IWeb3 web3, IConfiguration configuration)
         {
             _web3 = web3;
-            _oracleAddress = configuration.GetValue<string>("CHAINLINK_ORACLE") ?? string.Empty;
+            _oracleAddress =
+                configuration.GetValue<string>("CHAINLINK_ORACLE") ??
+                configuration.GetValue<string>("MOCK_ORACLE_ADDR") ??
+                configuration.GetValue<string>("ORACLE_TEST") ??
+                configuration.GetValue<string>("ORACLE_MAIN") ??
+                string.Empty;
         }
 
         /// <inheritdoc />

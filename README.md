@@ -22,6 +22,7 @@ npm install
 - `PRIVATE_KEY`：部署或测试用私钥
 - `ORACLE_TEST`：测试网预言机合约地址
 - `ORACLE_MAIN`：主网预言机合约地址
+- `CHAINLINK_ORACLE`：Chainlink 价格预言机地址，默认为本地或测试网合约
 - `ADMIN`：合约超级管理员地址
 - `OPERATOR`：负责执行的运营者地址
 - `BSC_RPC`：后台监听事件的 BSC RPC 地址
