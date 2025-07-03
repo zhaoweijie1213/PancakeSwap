@@ -19,7 +19,7 @@ namespace PancakeSwap.Infrastructure.Database.Repository
     /// <param name="logger"></param>
     /// <param name="connectionString"></param>
     /// <param name="dbType"></param>
-    public class RoundRepository(ILogger<RoundRepository> logger, IOptionsMonitor<DatabaseConfig> options, DbType dbType = DbType.Sqlite) : BaseRepository<RoundEntity>(logger, options.CurrentValue.Default, dbType), IRoundRepository
+    public class RoundRepository(ILogger<RoundRepository> logger, IOptionsMonitor<DatabaseConfig> options, DbType dbType = DbType.MySql) : BaseRepository<RoundEntity>(logger, options.CurrentValue.Default, dbType), IRoundRepository
     {
 
     }

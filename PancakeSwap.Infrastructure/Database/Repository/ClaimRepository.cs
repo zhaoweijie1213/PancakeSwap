@@ -14,7 +14,7 @@ namespace PancakeSwap.Infrastructure.Database.Repository
     /// <param name="logger">日志组件。</param>
     /// <param name="options">数据库配置。</param>
     /// <param name="dbType">数据库类型。</param>
-    public class ClaimRepository(ILogger<ClaimRepository> logger, IOptionsMonitor<DatabaseConfig> options, DbType dbType = DbType.Sqlite)
+    public class ClaimRepository(ILogger<ClaimRepository> logger, IOptionsMonitor<DatabaseConfig> options, DbType dbType = DbType.MySql)
         : BaseRepository<ClaimEntity>(logger, options.CurrentValue.Default, dbType), IClaimRepository
     {
     }

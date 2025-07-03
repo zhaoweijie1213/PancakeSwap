@@ -23,7 +23,7 @@ namespace PancakeSwap.Infrastructure.Database
             var db = new SqlSugarScope(new ConnectionConfig
             {
                 ConnectionString = connectionString,
-                DbType = DbType.Sqlite,
+                DbType = DbType.MySql,
                 IsAutoCloseConnection = true,
                 InitKeyType = InitKeyType.Attribute
             });

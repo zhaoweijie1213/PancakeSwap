@@ -9,8 +9,8 @@
         "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
         "keeper:local": "ts-node scripts/keeper.ts --network localhost",
         "deploy:bsctest": "hardhat run scripts/deploy.ts --network bsctest",
-        "deploy:local:mock": "hardhat run scripts/deploy-mock-aggregator.ts --network localhost",
-        "deploy:bsctest:mock": "hardhat run scripts/deploy-mock-aggregator.ts --network bsctest"
+        "deploy:local:mock": "hardhat run scripts/deployMock.ts --network localhost",
+        "deploy:bsctest:mock": "hardhat run scripts/deployMock.ts --network bsctest"
     },
     "devDependencies": {
         "@nomicfoundation/hardhat-toolbox": "^3.0.0",
