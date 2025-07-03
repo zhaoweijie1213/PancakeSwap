@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 using Nethereum.Hex.HexTypes;
 using Nethereum.Web3;
 using PancakeSwap.Application.Services;
+using PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2;
 using PancakeSwap.Infrastructure.Blockchain.PancakePredictionV2.ContractDefinition;
 using PancakeSwap.Api.Hubs;
 using PancakeSwap.Infrastructure.Database;
@@ -45,6 +46,11 @@ namespace PancakeSwap.Api.HostedServices
         private readonly string _contractAddress = configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty;
 
         /// <summary>
+        /// PancakePredictionV2 合约服务实例。
+        /// </summary>
+        private readonly PancakePredictionV2Service _predictionService = new(web3, configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty);
+
+        /// <summary>
         /// 回合结束事件过滤器 ID。
         /// </summary>
         private HexBigInteger? _endRoundFilterId;
@@ -73,6 +79,16 @@ namespace PancakeSwap.Api.HostedServices
         /// 下跌下注事件定义。
         /// </summary>
         private Event<BetBearEventDTO>? _betBearEvent;
+
+        /// <summary>
+        /// 锁仓事件过滤器 ID。
+        /// </summary>
+        private HexBigInteger? _lockRoundFilterId;
+
+        /// <summary>
+        /// 锁仓事件定义。
+        /// </summary>
+        private Event<LockRoundEventDTO>? _lockRoundEvent;
 
         /// <summary>
         /// 领奖事件过滤器 ID。
@@ -109,6 +125,10 @@ namespace PancakeSwap.Api.HostedServices
             _betBearEvent = _web3.Eth.GetEvent<BetBearEventDTO>(_contractAddress);
             _betBearFilterId = await _betBearEvent.CreateFilterAsync();
 
+            //锁仓事件
+            _lockRoundEvent = _web3.Eth.GetEvent<LockRoundEventDTO>(_contractAddress);
+            _lockRoundFilterId = await _lockRoundEvent.CreateFilterAsync();
+
             //认领奖励事件
             _claimEvent = _web3.Eth.GetEvent<ClaimEventDTO>(_contractAddress);
             // 创建认领奖励事件过滤器
@@ -118,6 +138,17 @@ namespace PancakeSwap.Api.HostedServices
             {
                 try
                 {
+                    //锁仓事件入库
+                    if (_lockRoundEvent != null && _lockRoundFilterId != null)
+                    {
+                        var logs = await _lockRoundEvent.GetFilterChangesAsync(_lockRoundFilterId);
+                        foreach (var log in logs)
+                        {
+                            var epoch = (long)log.Event.Epoch;
+                            await SyncRoundAsync(epoch, stoppingToken);
+                        }
+                    }
+
                     //回合结束入库
                     if (_endRoundEvent != null && _endRoundFilterId != null)
                     {
@@ -125,7 +156,7 @@ namespace PancakeSwap.Api.HostedServices
                         foreach (var log in logs)
                         {
                             var epoch = (long)log.Event.Epoch;
-                            await _roundService.SettleRoundAsync(epoch, stoppingToken);
+                            await SyncRoundAsync(epoch, stoppingToken);
                             await _hubContext.Clients.All.SendAsync("roundEnded", new { id = epoch }, stoppingToken);
                         }
                     }
@@ -202,6 +233,11 @@ namespace PancakeSwap.Api.HostedServices
                 await _web3.Eth.Filters.UninstallFilter.SendRequestAsync(_betBearFilterId);
             }
 
+            if (_lockRoundFilterId != null)
+            {
+                await _web3.Eth.Filters.UninstallFilter.SendRequestAsync(_lockRoundFilterId);
+            }
+
             if (_claimFilterId != null)
             {
                 await _web3.Eth.Filters.UninstallFilter.SendRequestAsync(_claimFilterId);
@@ -257,6 +293,51 @@ namespace PancakeSwap.Api.HostedServices
                 .SetColumns(b => new BetEntity { Claimed = true, Reward = reward })
                 .Where(b => b.Epoch == epoch && b.UserAddress == user)
                 .ExecuteCommandAsync();
+        }
+
+        /// <summary>
+        /// 从链上同步指定回合的数据到数据库。
+        /// </summary>
+        /// <param name="epoch">回合编号。</param>
+        /// <param name="ct">取消标记。</param>
+        private async Task SyncRoundAsync(long epoch, CancellationToken ct)
+        {
+            var dto = await _predictionService.RoundsQueryAsync(epoch);
+
+            var entity = new RoundEntity
+            {
+                Id = (long)dto.Epoch,
+                StartTime = DateTimeOffset.FromUnixTimeSeconds((long)dto.StartTimestamp).UtcDateTime,
+                LockTime = DateTimeOffset.FromUnixTimeSeconds((long)dto.LockTimestamp).UtcDateTime,
+                CloseTime = DateTimeOffset.FromUnixTimeSeconds((long)dto.CloseTimestamp).UtcDateTime,
+                LockPrice = (decimal)dto.LockPrice / 1_00000000m,
+                ClosePrice = (decimal)dto.ClosePrice / 1_00000000m,
+                LockOracleId = (long)dto.LockOracleId,
+                CloseOracleId = (long)dto.CloseOracleId,
+                TotalAmount = (decimal)dto.TotalAmount / 1_000000000000000000m,
+                BullAmount = (decimal)dto.BullAmount / 1_000000000000000000m,
+                BearAmount = (decimal)dto.BearAmount / 1_000000000000000000m,
+                RewardBaseCalAmount = (decimal)dto.RewardBaseCalAmount / 1_000000000000000000m,
+                RewardAmount = (decimal)dto.RewardAmount / 1_000000000000000000m,
+                Status = dto.OracleCalled
+                    ? RoundStatus.Ended
+                    : dto.LockPrice != 0 ? RoundStatus.Locked : RoundStatus.Live
+            };
+
+            var exists = await _dbContext.Db.Queryable<RoundEntity>()
+                .Where(r => r.Id == entity.Id)
+                .FirstAsync();
+
+            if (exists == null)
+            {
+                await _dbContext.Db.Insertable(entity).ExecuteCommandAsync();
+            }
+            else
+            {
+                await _dbContext.Db.Updateable(entity)
+                    .Where(r => r.Id == entity.Id)
+                    .ExecuteCommandAsync();
+            }
         }
     }
 }
