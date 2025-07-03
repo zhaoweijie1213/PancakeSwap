@@ -49,7 +49,13 @@ namespace PancakeSwap.Infrastructure.Services
             return nextId;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 锁定指定回合并写入锁仓价和时间。
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task LockRoundAsync(long id, CancellationToken ct)
         {
             var price = await _priceFeed.GetLatestPriceAsync(ct);

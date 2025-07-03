@@ -19,14 +19,29 @@ namespace PancakeSwap.Api.HostedServices
     /// <summary>
     /// 监听 PancakePrediction 合约的 EndRound 事件。
     /// </summary>
-    public class ChainEventListener : BackgroundService
+    /// <remarks>
+    /// 初始化 <see cref="ChainEventListener"/> 实例。
+    /// </remarks>
+    /// <param name="configuration">配置读取器。</param>
+    /// <param name="web3">Web3 实例。</param>
+    /// <param name="roundService">回合服务。</param>
+    /// <param name="dbContext">数据库上下文</param>
+    /// <param name="logger">日志组件。</param>
+    /// <param name="hubContext"></param>
+    public class ChainEventListener(
+        IConfiguration configuration,
+        IWeb3 web3,
+        IRoundService roundService,
+        ApplicationDbContext dbContext,
+        ILogger<ChainEventListener> logger,
+        IHubContext<PredictionHub> hubContext) : BackgroundService
     {
-        private readonly IWeb3 _web3;
-        private readonly IRoundService _roundService;
-        private readonly ILogger<ChainEventListener> _logger;
-        private readonly IHubContext<PredictionHub> _hubContext;
-        private readonly ApplicationDbContext _dbContext;
-        private readonly string _contractAddress;
+        private readonly IWeb3 _web3 = web3;
+        private readonly IRoundService _roundService = roundService;
+        private readonly ILogger<ChainEventListener> _logger = logger;
+        private readonly IHubContext<PredictionHub> _hubContext = hubContext;
+        private readonly ApplicationDbContext _dbContext = dbContext;
+        private readonly string _contractAddress = configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty;
         private HexBigInteger? _endRoundFilterId;
         private Nethereum.Contracts.Event<EndRoundEventDTO>? _endRoundEvent;
         private HexBigInteger? _betBullFilterId;
@@ -35,30 +50,6 @@ namespace PancakeSwap.Api.HostedServices
         private Nethereum.Contracts.Event<BetBearEventDTO>? _betBearEvent;
         private HexBigInteger? _claimFilterId;
         private Nethereum.Contracts.Event<ClaimEventDTO>? _claimEvent;
-
-        /// <summary>
-        /// 初始化 <see cref="ChainEventListener"/> 实例。
-        /// </summary>
-        /// <param name="configuration">配置读取器。</param>
-        /// <param name="web3">Web3 实例。</param>
-        /// <param name="roundService">回合服务。</param>
-        /// <param name="logger">日志组件。</param>
-        /// <param name="hubContext"></param>
-        public ChainEventListener(
-            IConfiguration configuration,
-            IWeb3 web3,
-            IRoundService roundService,
-            ApplicationDbContext dbContext,
-            ILogger<ChainEventListener> logger,
-            IHubContext<PredictionHub> hubContext)
-        {
-            _web3 = web3;
-            _roundService = roundService;
-            _dbContext = dbContext;
-            _logger = logger;
-            _hubContext = hubContext;
-            _contractAddress = configuration.GetValue<string>("PREDICTION_ADDRESS") ?? string.Empty;
-        }
 
         /// <summary>
         /// 监听合约事件并处理相关逻辑。

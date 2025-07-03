@@ -39,7 +39,10 @@ pragma solidity ^0.8.0;
 abstract contract Ownable is Context {
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -79,7 +82,10 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
         _setOwner(newOwner);
     }
 
@@ -261,7 +267,10 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -270,7 +279,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -315,7 +327,11 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
 pragma solidity ^0.8.0;
@@ -370,10 +386,16 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+        require(
+            address(this).balance >= amount,
+            "Address: insufficient balance"
+        );
 
         (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Address: unable to send value, recipient may have reverted");
+        require(
+            success,
+            "Address: unable to send value, recipient may have reverted"
+        );
     }
 
     /**
@@ -394,7 +416,10 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
+    function functionCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
         return functionCall(target, data, "Address: low-level call failed");
     }
 
@@ -428,7 +453,13 @@ library Address {
         bytes memory data,
         uint256 value
     ) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+        return
+            functionCallWithValue(
+                target,
+                data,
+                value,
+                "Address: low-level call with value failed"
+            );
     }
 
     /**
@@ -443,10 +474,15 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
+        require(
+            address(this).balance >= value,
+            "Address: insufficient balance for call"
+        );
         require(isContract(target), "Address: call to non-contract");
 
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
+        (bool success, bytes memory returndata) = target.call{value: value}(
+            data
+        );
         return _verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -456,8 +492,16 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
-        return functionStaticCall(target, data, "Address: low-level static call failed");
+    function functionStaticCall(
+        address target,
+        bytes memory data
+    ) internal view returns (bytes memory) {
+        return
+            functionStaticCall(
+                target,
+                data,
+                "Address: low-level static call failed"
+            );
     }
 
     /**
@@ -483,8 +527,16 @@ library Address {
      *
      * _Available since v3.4._
      */
-    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
+    function functionDelegateCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return
+            functionDelegateCall(
+                target,
+                data,
+                "Address: low-level delegate call failed"
+            );
     }
 
     /**
@@ -529,7 +581,6 @@ library Address {
 
 pragma solidity ^0.8.0;
 
-
 /**
  * @title SafeERC20
  * @dev Wrappers around ERC20 operations that throw on failure (when the token
@@ -542,12 +593,11 @@ pragma solidity ^0.8.0;
 library SafeERC20 {
     using Address for address;
 
-    function safeTransfer(
-        IERC20 token,
-        address to,
-        uint256 value
-    ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    function safeTransfer(IERC20 token, address to, uint256 value) internal {
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transfer.selector, to, value)
+        );
     }
 
     function safeTransferFrom(
@@ -556,7 +606,10 @@ library SafeERC20 {
         address to,
         uint256 value
     ) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
+        );
     }
 
     /**
@@ -578,7 +631,10 @@ library SafeERC20 {
             (value == 0) || (token.allowance(address(this), spender) == 0),
             "SafeERC20: approve from non-zero to non-zero allowance"
         );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.approve.selector, spender, value)
+        );
     }
 
     function safeIncreaseAllowance(
@@ -587,7 +643,14 @@ library SafeERC20 {
         uint256 value
     ) internal {
         uint256 newAllowance = token.allowance(address(this), spender) + value;
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
     function safeDecreaseAllowance(
@@ -597,9 +660,19 @@ library SafeERC20 {
     ) internal {
         unchecked {
             uint256 oldAllowance = token.allowance(address(this), spender);
-            require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
+            require(
+                oldAllowance >= value,
+                "SafeERC20: decreased allowance below zero"
+            );
             uint256 newAllowance = oldAllowance - value;
-            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+            _callOptionalReturn(
+                token,
+                abi.encodeWithSelector(
+                    token.approve.selector,
+                    spender,
+                    newAllowance
+                )
+            );
         }
     }
 
@@ -614,10 +687,16 @@ library SafeERC20 {
         // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
+        bytes memory returndata = address(token).functionCall(
+            data,
+            "SafeERC20: low-level call failed"
+        );
         if (returndata.length > 0) {
             // Return data is optional
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            require(
+                abi.decode(returndata, (bool)),
+                "SafeERC20: ERC20 operation did not succeed"
+            );
         }
     }
 }
@@ -625,55 +704,38 @@ library SafeERC20 {
 pragma solidity ^0.8.0;
 
 interface AggregatorV3Interface {
+    function decimals() external view returns (uint8);
 
-  function decimals()
-    external
-    view
-    returns (
-      uint8
-    );
+    function description() external view returns (string memory);
 
-  function description()
-    external
-    view
-    returns (
-      string memory
-    );
+    function version() external view returns (uint256);
 
-  function version()
-    external
-    view
-    returns (
-      uint256
-    );
+    // getRoundData and latestRoundData should both raise "No data present"
+    // if they do not have data to report, instead of returning unset values
+    // which could be misinterpreted as actual reported values.
+    function getRoundData(
+        uint80 _roundId
+    )
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 
-  // getRoundData and latestRoundData should both raise "No data present"
-  // if they do not have data to report, instead of returning unset values
-  // which could be misinterpreted as actual reported values.
-  function getRoundData(
-    uint80 _roundId
-  )
-    external
-    view
-    returns (
-      uint80 roundId,
-      int256 answer,
-      uint256 startedAt,
-      uint256 updatedAt,
-      uint80 answeredInRound
-    );
-
-  function latestRoundData()
-    external
-    view
-    returns (
-      uint80 roundId,
-      int256 answer,
-      uint256 startedAt,
-      uint256 updatedAt,
-      uint80 answeredInRound
-    );
-
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 }
 
 pragma solidity ^0.8.0;
@@ -739,14 +801,33 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
         bool claimed; // default false
     }
 
-    event BetBear(address indexed sender, uint256 indexed epoch, uint256 amount);
-    event BetBull(address indexed sender, uint256 indexed epoch, uint256 amount);
+    event BetBear(
+        address indexed sender,
+        uint256 indexed epoch,
+        uint256 amount
+    );
+    event BetBull(
+        address indexed sender,
+        uint256 indexed epoch,
+        uint256 amount
+    );
     event Claim(address indexed sender, uint256 indexed epoch, uint256 amount);
-    event EndRound(uint256 indexed epoch, uint256 indexed roundId, int256 price);
-    event LockRound(uint256 indexed epoch, uint256 indexed roundId, int256 price);
+    event EndRound(
+        uint256 indexed epoch,
+        uint256 indexed roundId,
+        int256 price
+    );
+    event LockRound(
+        uint256 indexed epoch,
+        uint256 indexed roundId,
+        int256 price
+    );
 
     event NewAdminAddress(address admin);
-    event NewBufferAndIntervalSeconds(uint256 bufferSeconds, uint256 intervalSeconds);
+    event NewBufferAndIntervalSeconds(
+        uint256 bufferSeconds,
+        uint256 intervalSeconds
+    );
     event NewMinBetAmount(uint256 indexed epoch, uint256 minBetAmount);
     event NewTreasuryFee(uint256 indexed epoch, uint256 treasuryFee);
     event NewOperatorAddress(address operator);
@@ -772,7 +853,10 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
     }
 
     modifier onlyAdminOrOperator() {
-        require(msg.sender == adminAddress || msg.sender == operatorAddress, "Not operator/admin");
+        require(
+            msg.sender == adminAddress || msg.sender == operatorAddress,
+            "Not operator/admin"
+        );
         _;
     }
 
@@ -824,11 +908,19 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @notice Bet bear position
      * @param epoch: epoch
      */
-    function betBear(uint256 epoch) external payable whenNotPaused nonReentrant notContract {
+    function betBear(
+        uint256 epoch
+    ) external payable whenNotPaused nonReentrant notContract {
         require(epoch == currentEpoch, "Bet is too early/late");
         require(_bettable(epoch), "Round not bettable");
-        require(msg.value >= minBetAmount, "Bet amount must be greater than minBetAmount");
-        require(ledger[epoch][msg.sender].amount == 0, "Can only bet once per round");
+        require(
+            msg.value >= minBetAmount,
+            "Bet amount must be greater than minBetAmount"
+        );
+        require(
+            ledger[epoch][msg.sender].amount == 0,
+            "Can only bet once per round"
+        );
 
         // Update round data
         uint256 amount = msg.value;
@@ -849,11 +941,19 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @notice Bet bull position
      * @param epoch: epoch
      */
-    function betBull(uint256 epoch) external payable whenNotPaused nonReentrant notContract {
+    function betBull(
+        uint256 epoch
+    ) external payable whenNotPaused nonReentrant notContract {
         require(epoch == currentEpoch, "Bet is too early/late");
         require(_bettable(epoch), "Round not bettable");
-        require(msg.value >= minBetAmount, "Bet amount must be greater than minBetAmount");
-        require(ledger[epoch][msg.sender].amount == 0, "Can only bet once per round");
+        require(
+            msg.value >= minBetAmount,
+            "Bet amount must be greater than minBetAmount"
+        );
+        require(
+            ledger[epoch][msg.sender].amount == 0,
+            "Can only bet once per round"
+        );
 
         // Update round data
         uint256 amount = msg.value;
@@ -874,24 +974,41 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @notice Claim reward for an array of epochs
      * @param epochs: array of epochs
      */
-    function claim(uint256[] calldata epochs) external nonReentrant notContract {
+    function claim(
+        uint256[] calldata epochs
+    ) external nonReentrant notContract {
         uint256 reward; // Initializes reward
 
         for (uint256 i = 0; i < epochs.length; i++) {
-            require(rounds[epochs[i]].startTimestamp != 0, "Round has not started");
-            require(block.timestamp > rounds[epochs[i]].closeTimestamp, "Round has not ended");
+            require(
+                rounds[epochs[i]].startTimestamp != 0,
+                "Round has not started"
+            );
+            require(
+                block.timestamp > rounds[epochs[i]].closeTimestamp,
+                "Round has not ended"
+            );
 
             uint256 addedReward = 0;
 
             // Round valid, claim rewards
             if (rounds[epochs[i]].oracleCalled) {
-                require(claimable(epochs[i], msg.sender), "Not eligible for claim");
+                require(
+                    claimable(epochs[i], msg.sender),
+                    "Not eligible for claim"
+                );
                 Round memory round = rounds[epochs[i]];
-                addedReward = (ledger[epochs[i]][msg.sender].amount * round.rewardAmount) / round.rewardBaseCalAmount;
+                addedReward =
+                    (ledger[epochs[i]][msg.sender].amount *
+                        round.rewardAmount) /
+                    round.rewardBaseCalAmount;
             }
             // Round invalid, refund bet amount
             else {
-                require(refundable(epochs[i], msg.sender), "Not eligible for refund");
+                require(
+                    refundable(epochs[i], msg.sender),
+                    "Not eligible for refund"
+                );
                 addedReward = ledger[epochs[i]][msg.sender].amount;
             }
 
@@ -935,7 +1052,10 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @dev Callable by operator
      */
     function genesisLockRound() external whenNotPaused onlyOperator {
-        require(genesisStartOnce, "Can only run after genesisStartRound is triggered");
+        require(
+            genesisStartOnce,
+            "Can only run after genesisStartRound is triggered"
+        );
         require(!genesisLockOnce, "Can only run genesisLockRound once");
 
         (uint80 currentRoundId, int256 currentPrice) = _getPriceFromOracle();
@@ -999,12 +1119,14 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @notice Set buffer and interval (in seconds)
      * @dev Callable by admin
      */
-    function setBufferAndIntervalSeconds(uint256 _bufferSeconds, uint256 _intervalSeconds)
-        external
-        whenPaused
-        onlyAdmin
-    {
-        require(_bufferSeconds < _intervalSeconds, "bufferSeconds must be inferior to intervalSeconds");
+    function setBufferAndIntervalSeconds(
+        uint256 _bufferSeconds,
+        uint256 _intervalSeconds
+    ) external whenPaused onlyAdmin {
+        require(
+            _bufferSeconds < _intervalSeconds,
+            "bufferSeconds must be inferior to intervalSeconds"
+        );
         bufferSeconds = _bufferSeconds;
         intervalSeconds = _intervalSeconds;
 
@@ -1015,7 +1137,9 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @notice Set minBetAmount
      * @dev Callable by admin
      */
-    function setMinBetAmount(uint256 _minBetAmount) external whenPaused onlyAdmin {
+    function setMinBetAmount(
+        uint256 _minBetAmount
+    ) external whenPaused onlyAdmin {
         require(_minBetAmount != 0, "Must be superior to 0");
         minBetAmount = _minBetAmount;
 
@@ -1052,7 +1176,9 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @notice Set oracle update allowance
      * @dev Callable by admin
      */
-    function setOracleUpdateAllowance(uint256 _oracleUpdateAllowance) external whenPaused onlyAdmin {
+    function setOracleUpdateAllowance(
+        uint256 _oracleUpdateAllowance
+    ) external whenPaused onlyAdmin {
         oracleUpdateAllowance = _oracleUpdateAllowance;
 
         emit NewOracleUpdateAllowance(_oracleUpdateAllowance);
@@ -1062,7 +1188,9 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @notice Set treasury fee
      * @dev Callable by admin
      */
-    function setTreasuryFee(uint256 _treasuryFee) external whenPaused onlyAdmin {
+    function setTreasuryFee(
+        uint256 _treasuryFee
+    ) external whenPaused onlyAdmin {
         require(_treasuryFee <= MAX_TREASURY_FEE, "Treasury fee too high");
         treasuryFee = _treasuryFee;
 
@@ -1102,15 +1230,7 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
         address user,
         uint256 cursor,
         uint256 size
-    )
-        external
-        view
-        returns (
-            uint256[] memory,
-            BetInfo[] memory,
-            uint256
-        )
-    {
+    ) external view returns (uint256[] memory, BetInfo[] memory, uint256) {
         uint256 length = size;
 
         if (length > userRounds[user].length - cursor) {
@@ -1151,8 +1271,10 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
             round.oracleCalled &&
             betInfo.amount != 0 &&
             !betInfo.claimed &&
-            ((round.closePrice > round.lockPrice && betInfo.position == Position.Bull) ||
-                (round.closePrice < round.lockPrice && betInfo.position == Position.Bear));
+            ((round.closePrice > round.lockPrice &&
+                betInfo.position == Position.Bull) ||
+                (round.closePrice < round.lockPrice &&
+                    betInfo.position == Position.Bear));
     }
 
     /**
@@ -1160,7 +1282,10 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @param epoch: epoch
      * @param user: user address
      */
-    function refundable(uint256 epoch, address user) public view returns (bool) {
+    function refundable(
+        uint256 epoch,
+        address user
+    ) public view returns (bool) {
         BetInfo memory betInfo = ledger[epoch][user];
         Round memory round = rounds[epoch];
         return
@@ -1175,7 +1300,11 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @param epoch: epoch
      */
     function _calculateRewards(uint256 epoch) internal {
-        require(rounds[epoch].rewardBaseCalAmount == 0 && rounds[epoch].rewardAmount == 0, "Rewards calculated");
+        require(
+            rounds[epoch].rewardBaseCalAmount == 0 &&
+                rounds[epoch].rewardAmount == 0,
+            "Rewards calculated"
+        );
         Round storage round = rounds[epoch];
         uint256 rewardBaseCalAmount;
         uint256 treasuryAmt;
@@ -1205,7 +1334,12 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
         // Add to treasury
         treasuryAmount += treasuryAmt;
 
-        emit RewardsCalculated(epoch, rewardBaseCalAmount, rewardAmount, treasuryAmt);
+        emit RewardsCalculated(
+            epoch,
+            rewardBaseCalAmount,
+            rewardAmount,
+            treasuryAmt
+        );
     }
 
     /**
@@ -1219,8 +1353,14 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
         uint256 roundId,
         int256 price
     ) internal {
-        require(rounds[epoch].lockTimestamp != 0, "Can only end round after round has locked");
-        require(block.timestamp >= rounds[epoch].closeTimestamp, "Can only end round after closeTimestamp");
+        require(
+            rounds[epoch].lockTimestamp != 0,
+            "Can only end round after round has locked"
+        );
+        require(
+            block.timestamp >= rounds[epoch].closeTimestamp,
+            "Can only end round after closeTimestamp"
+        );
         require(
             block.timestamp <= rounds[epoch].closeTimestamp + bufferSeconds,
             "Can only end round within bufferSeconds"
@@ -1244,8 +1384,14 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
         uint256 roundId,
         int256 price
     ) internal {
-        require(rounds[epoch].startTimestamp != 0, "Can only lock round after round has started");
-        require(block.timestamp >= rounds[epoch].lockTimestamp, "Can only lock round after lockTimestamp");
+        require(
+            rounds[epoch].startTimestamp != 0,
+            "Can only lock round after round has started"
+        );
+        require(
+            block.timestamp >= rounds[epoch].lockTimestamp,
+            "Can only lock round after lockTimestamp"
+        );
         require(
             block.timestamp <= rounds[epoch].lockTimestamp + bufferSeconds,
             "Can only lock round within bufferSeconds"
@@ -1264,8 +1410,14 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      * @param epoch: epoch
      */
     function _safeStartRound(uint256 epoch) internal {
-        require(genesisStartOnce, "Can only run after genesisStartRound is triggered");
-        require(rounds[epoch - 2].closeTimestamp != 0, "Can only start round after round n-2 has ended");
+        require(
+            genesisStartOnce,
+            "Can only run after genesisStartRound is triggered"
+        );
+        require(
+            rounds[epoch - 2].closeTimestamp != 0,
+            "Can only start round after round n-2 has ended"
+        );
         require(
             block.timestamp >= rounds[epoch - 2].closeTimestamp,
             "Can only start new round after round n-2 closeTimestamp"
@@ -1318,8 +1470,12 @@ contract PancakePredictionV2 is Ownable, Pausable, ReentrancyGuard {
      */
     function _getPriceFromOracle() internal view returns (uint80, int256) {
         uint256 leastAllowedTimestamp = block.timestamp + oracleUpdateAllowance;
-        (uint80 roundId, int256 price, , uint256 timestamp, ) = oracle.latestRoundData();
-        require(timestamp <= leastAllowedTimestamp, "Oracle update exceeded max timestamp allowance");
+        (uint80 roundId, int256 price, , uint256 timestamp, ) = oracle
+            .latestRoundData();
+        require(
+            timestamp <= leastAllowedTimestamp,
+            "Oracle update exceeded max timestamp allowance"
+        );
         require(
             uint256(roundId) > oracleLatestRoundId,
             "Oracle update roundId must be larger than oracleLatestRoundId"

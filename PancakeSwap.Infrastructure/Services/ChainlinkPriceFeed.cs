@@ -12,10 +12,17 @@ namespace PancakeSwap.Infrastructure.Services
     /// </summary>
     public class ChainlinkPriceFeed : IPriceFeed
     {
+        /// <summary>
+        /// 最新价格查询的 ABI 定义。
+        /// </summary>
         private const string LatestAnswerAbi =
             "[{\"inputs\":[],\"name\":\"latestAnswer\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]";
 
         private readonly IWeb3 _web3;
+
+        /// <summary>
+        /// 
+        /// </summary>
         private readonly string _oracleAddress;
 
         /// <summary>
@@ -32,7 +39,11 @@ namespace PancakeSwap.Infrastructure.Services
                 string.Empty;
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 获取最新价格。
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<decimal?> GetLatestPriceAsync(CancellationToken ct)
         {
             if (string.IsNullOrEmpty(_oracleAddress))
