@@ -152,7 +152,11 @@ namespace PancakeSwap.Api.HostedServices
             }
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 停止服务时卸载所有过滤器。
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             if (_endRoundFilterId != null)
@@ -178,6 +182,14 @@ namespace PancakeSwap.Api.HostedServices
             await base.StopAsync(cancellationToken);
         }
 
+        /// <summary>
+        /// 保存下注记录到数据库。
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="epoch"></param>
+        /// <param name="amountWei"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
         private async Task SaveBetAsync(string user, long epoch, System.Numerics.BigInteger amountWei, Position position)
         {
             var amount = (decimal)amountWei / 1_000000000000000000m;
@@ -193,6 +205,14 @@ namespace PancakeSwap.Api.HostedServices
             await _dbContext.Db.Insertable(bet).ExecuteCommandAsync();
         }
 
+        /// <summary>
+        /// 保存认领奖励记录到数据库
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="epoch"></param>
+        /// <param name="rewardWei"></param>
+        /// <param name="txHash"></param>
+        /// <returns></returns>
         private async Task SaveClaimAsync(string user, long epoch, System.Numerics.BigInteger rewardWei, string txHash)
         {
             var reward = (decimal)rewardWei / 1_000000000000000000m;

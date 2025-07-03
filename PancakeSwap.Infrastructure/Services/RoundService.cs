@@ -69,7 +69,13 @@ namespace PancakeSwap.Infrastructure.Services
                 .ExecuteCommandAsync();
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 写入回合结算信息，包括收盘价和状态。
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public async Task SettleRoundAsync(long id, CancellationToken ct)
         {
             var closePrice = await _priceFeed.GetLatestPriceAsync(ct);
@@ -96,7 +102,11 @@ namespace PancakeSwap.Infrastructure.Services
                 .ExecuteCommandAsync();
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 获取当前回合信息。
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<CurrentRoundOutput?> GetCurrentRoundAsync(CancellationToken ct)
         {
             var now = DateTime.UtcNow;
