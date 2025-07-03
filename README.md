@@ -63,10 +63,10 @@ npx hardhat compile
 npm run node  # 终端 A：本地链
 ```
 
-**部署MockAggregator代替Chainlink 预言机**
+**部署 MockV3Aggregator 代替 Chainlink 预言机**
 
 ```bash
-npm run deploy:local:mock  # 终端 B：MockAggregator
+npm run deploy:local:mock  # 终端 B：MockV3Aggregator
 ```
 
 **部署智能合约**
