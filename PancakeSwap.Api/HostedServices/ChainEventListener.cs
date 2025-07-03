@@ -105,11 +105,10 @@ namespace PancakeSwap.Api.HostedServices
         private Event<ClaimEventDTO>? _claimEvent;
 
         /// <summary>
-        /// 监听合约事件并处理相关逻辑。
+        /// 在后台任务启动时初始化事件过滤器。
         /// </summary>
-        /// <param name="stoppingToken"></param>
-        /// <returns></returns>
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        /// <param name="cancellationToken">取消标记。</param>
+        public override async Task StartAsync(CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(_contractAddress))
             {
@@ -117,29 +116,37 @@ namespace PancakeSwap.Api.HostedServices
                 return;
             }
 
-
             var earliest = BlockParameter.CreateEarliest();
 
-            //回合结束事件
             _endRoundEvent = _web3.Eth.GetEvent<EndRoundEventDTO>(_contractAddress);
             _endRoundFilterId = await _endRoundEvent.CreateFilterAsync(earliest);
 
-            //多头下注事件
             _betBullEvent = _web3.Eth.GetEvent<BetBullEventDTO>(_contractAddress);
             _betBullFilterId = await _betBullEvent.CreateFilterAsync(earliest);
 
-            //下跌下注事件
             _betBearEvent = _web3.Eth.GetEvent<BetBearEventDTO>(_contractAddress);
             _betBearFilterId = await _betBearEvent.CreateFilterAsync(earliest);
 
-            //锁仓事件
             _lockRoundEvent = _web3.Eth.GetEvent<LockRoundEventDTO>(_contractAddress);
             _lockRoundFilterId = await _lockRoundEvent.CreateFilterAsync(earliest);
 
-            //认领奖励事件
             _claimEvent = _web3.Eth.GetEvent<ClaimEventDTO>(_contractAddress);
-            // 创建认领奖励事件过滤器
             _claimFilterId = await _claimEvent.CreateFilterAsync(earliest);
+
+            await base.StartAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// 循环监听并处理合约事件。
+        /// </summary>
+        /// <param name="stoppingToken">取消标记。</param>
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            if (string.IsNullOrWhiteSpace(_contractAddress))
+            {
+                _logger.LogWarning("PREDICTION_ADDRESS not configured");
+                return;
+            }
 
             while (!stoppingToken.IsCancellationRequested)
             {
