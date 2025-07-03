@@ -41,7 +41,7 @@ public class RoundServiceTests(WebApplicationFactory<Program> factory) : IClassF
 
         var service = new RoundService(context, mock.Object);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SettleRoundAsync(1, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SettleRoundAsync(1));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class RoundServiceTests(WebApplicationFactory<Program> factory) : IClassF
 
         var service = new RoundService(context, mock.Object);
 
-        await service.SettleRoundAsync(1, CancellationToken.None);
+        await service.SettleRoundAsync(1);
 
         var round = await context.Db.Queryable<RoundEntity>().Where(r => r.Id == 1).FirstAsync();
         Assert.Equal(RoundStatus.Ended, round.Status);
