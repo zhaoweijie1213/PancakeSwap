@@ -17,7 +17,7 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddMultipleService("^PancakeSwap");
 builder.Services.AddSingleton<ApplicationDbContext>();
-builder.Services.Configure<DatabaseConfig>(builder.Configuration.GetSection("ConnectionStrings:Default"));
+builder.Services.Configure<DatabaseConfig>(builder.Configuration.GetSection("ConnectionStrings"));
 
 var rpc = builder.Configuration.GetValue<string>("BSC_RPC");
 builder.Services.AddSingleton<IWeb3>(_ => new Web3(rpc));
